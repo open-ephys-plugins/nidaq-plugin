@@ -6,7 +6,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 endif()
 
 #change this line to modify the plugin name
-set(PLUGIN_NAME NI_DAQmx)
+set(PLUGIN_NAME NI-DAQmx)
 #change this if the base GUI code is located somewhere else
 set(GUI_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../plugin-GUI)
 
