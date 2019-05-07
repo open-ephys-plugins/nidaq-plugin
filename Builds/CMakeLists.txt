@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(oe_plugin)
+project(ni-daq)
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set(LINUX 1)
 endif()
 
 #change this line to modify the plugin name
-set(PLUGIN_NAME OEPlugin)
+set(PLUGIN_NAME NI_DAQmx)
 #change this if the base GUI code is located somewhere else
 set(GUI_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../plugin-GUI)
 

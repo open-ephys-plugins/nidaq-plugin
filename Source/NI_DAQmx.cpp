@@ -1,19 +1,19 @@
-#include "ProcessorPlugin.h"
+#include "NI_DAQmx.h"
 
-using namespace ProcessorPluginSpace;
+using namespace NIDAQ;
 
 //Change al names for the relevant ones, including "Processor Name"
-ProcessorPlugin::ProcessorPlugin() : GenericProcessor("Processor Name")
+NI_DAQmx::NI_DAQmx() : GenericProcessor("NI_DAQmx")
 {
 
 }
 
-ProcessorPlugin::~ProcessorPlugin()
+NI_DAQmx::~NI_DAQmx()
 {
 
 }
 
-void ProcessorPlugin::process(AudioSampleBuffer& buffer)
+void NI_DAQmx::process(AudioSampleBuffer& buffer)
 {
 	/** 
 	If the processor needs to handle events, this method must be called onyle once per process call

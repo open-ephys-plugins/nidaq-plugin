@@ -1,20 +1,22 @@
 //This prevents include loops. We recommend changing the macro to a name suitable for your plugin
-#ifndef PROCESSORPLUGIN_H_DEFINED
-#define PROCESSORPLUGIN_H_DEFINED
+#ifndef NI_DAQMX_H_DEFINED
+#define NI_DAQMX_H_DEFINED
 
-#include <ProcessorHeaders.h>
+#include "DataThreadHeaders.h"
+#include "nidaq-api/NIDAQmx.h"
 
-//namespace must be an unique name fot your plugin
-namespace ProcessorPluginSpace
+//namespace must be an unique name for your plugin
+namespace NIDAQ
+
 {
-	class ProcessorPlugin : public GenericProcessor
+	class NI_DAQmx : public GenericProcessor
 	{
 	public:
 		/** The class constructor, used to initialize any members. */
-		ProcessorPlugin();
+		NI_DAQmx();
 
 		/** The class destructor, used to deallocate memory */
-		~ProcessorPlugin();
+		~NI_DAQmx();
 
 		/** Indicates if the processor has a custom editor. Defaults to false */
 		//bool hasEditor() const { return true; }

@@ -35,6 +35,7 @@
 #pragma EnableLibraryRuntimeChecking
 #endif
 
+namespace NIDAQ {
 
 // NI-DAQmx Typedefs
 #ifndef _NI_int8_DEFINED_
@@ -9660,6 +9661,7 @@ int32 __CFUNC DAQmxResetSampClkTimingResponseMode(TaskHandle taskHandle);
 #define DAQmxWarningPALDispatcherAlreadyExported                                          (50500)
 #define DAQmxWarningPALSyncAbandoned                                                      (50551)
 
+} //end namespace NI
 
 #ifdef __cplusplus
 	}
