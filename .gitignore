@@ -1,0 +1,23 @@
+# Files and folders to ignore
+
+# 1. intermediate files
+*.o
+*.d
+
+
+# 2. Windows related
+
+Builds/VisualStudio2013/**/Debug
+Builds/VisualStudio2013/**/Release
+Builds/VisualStudio2013/x64
+Builds/VisualStudio2013/*.sdf
+Builds/VisualStudio2013/*.opensdf
+Builds/VisualStudio2013/*.suo
+Builds/VisualStudio2013/*.user
+Builds/VisualStudio2013/*/*.sdf
+Builds/VisualStudio2013/*/*.opensdf
+Builds/VisualStudio2013/*/*.suo
+Builds/VisualStudio2013/*/*.user
+
+
+
