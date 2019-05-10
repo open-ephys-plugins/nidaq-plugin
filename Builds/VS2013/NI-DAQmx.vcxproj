@@ -123,6 +123,9 @@
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy /Y "$(OutDir)$(TargetFileName)" "..\..\..\plugin-GUI\Builds\VisualStudio2013\x64\Debug\bin\plugins</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>

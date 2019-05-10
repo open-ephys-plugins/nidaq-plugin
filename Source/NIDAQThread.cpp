@@ -46,12 +46,39 @@ NIDAQThread::~NIDAQThread()
 
 void NIDAQThread::openConnection()
 {
+	if (false)
+	{
+		//Simulate connection
+		int numAnalogInputs = 8;
+		int numDigitalInputs = 8;
+		for (int i = 0; i < numAnalogInputs; i++)
+		{
+			ai.add(AnalogIn(i));
+		}
+
+		for (int i = 0; i < numDigitalInputs; i++)
+		{
+			di.add(DigitalIn(i));
+		}
+	}
 
 }
 
 void NIDAQThread::closeConnection()
 {
 
+}
+
+int NIDAQThread::getNumAnalogInputs()
+{
+	return 8;
+	return ai.size();
+}
+
+int NIDAQThread::getNumDigitalInputs()
+{
+	return 8;
+	return di.size();
 }
 
 /** Returns true if the data source is connected, false otherwise.*/
@@ -134,15 +161,22 @@ bool NIDAQThread::usesCustomNames() const
 /** Returns the number of virtual subprocessors this source can generate */
 unsigned int NIDAQThread::getNumSubProcessors() const
 {
-	//TODO
+	//TODO?
 	return 1;
 }
 
 /** Returns the number of continuous headstage channels the data source can provide.*/
 int NIDAQThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int subProcessorIdx) const
 {
-	//TODO
-	return 0;
+	//TODO?
+	int numChans;
+
+	if (type == DataChannel::DataChannelTypes::AUX_CHANNEL)
+		numChans = 1;
+	else
+		numChans = 0;
+
+	return numChans;
 }
 
 /** Returns the number of TTL channels that each subprocessor generates*/
@@ -156,15 +190,14 @@ int NIDAQThread::getNumTTLOutputs(int subProcessorIdx) const
 float NIDAQThread::getSampleRate(int subProcessorIdx) const
 {
 	//TODO
-	float rate;
-	return rate;
+	return 30000.0f;
 }
 
 /** Returns the volts per bit of the data source.*/
 float NIDAQThread::getBitVolts(const DataChannel* chan) const
 {
 	//TODO
-	return 0.0f;
+	return 0.1950000f;
 }
 
 void NIDAQThread::setTriggerMode(bool trigger)

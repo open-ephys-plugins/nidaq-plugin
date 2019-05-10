@@ -28,36 +28,44 @@ EditorBackground::EditorBackground(int nAI, int nDI) {}
 
 void EditorBackground::paint(Graphics& g)
 {
+
+	nAI = 8;
+	nDI = 8;
+
 	/* Draw AI channels */
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 8; i++)
 	{
+
+		int colIndex = i / 4;
+		int rowIndex = i % 4;
+		int x_pos = colIndex * 90 + 40;
+		int y_pos = 5 + rowIndex * 26;
+
 		g.setColour(Colours::lightgrey);
-		g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 3);
+		g.drawRoundedRectangle(15 + colIndex * 75, 12 + 26 * rowIndex, 70, 22, 4, 3);
 		g.setColour(Colours::darkgrey);
-		g.drawRoundedRectangle(90 * i + 32, 13, 32, 98, 4, 1);
+		g.drawRoundedRectangle(15 + colIndex * 75, 12 + 26 * rowIndex, 70, 22, 4, 1);
+		g.drawRoundedRectangle(15 + colIndex * 75 + 70 - 70 / 3, 16 + 26 * rowIndex, 70 / 3 - 4, 14, 1, 1);
+		g.setFont(10);
+		g.drawText(String("AI") + String(i), 20 + colIndex * 75, 18 + 26 * rowIndex, 20, 10, Justification::centredLeft);
+		g.drawText(String("FS"), 66 + colIndex * 75, 18 + 26 * rowIndex, 20, 10, Justification::centredLeft);
 
-		g.setColour(Colours::darkgrey);
-		g.setFont(20);
-		g.drawText(String(i + 1), 90 * i + 72, 15, 10, 10, Justification::centred);
-		g.setFont(8);
-		g.drawText(String("0"), 90 * i + 87, 100, 50, 10, Justification::centredLeft);
-		g.drawText(String("100"), 90 * i + 87, 60, 50, 10, Justification::centredLeft);
-		g.drawText(String("%"), 90 * i + 87, 80, 50, 10, Justification::centredLeft);
-
-		for (int j = 0; j < 4; j++)
-		{
-			g.setFont(10);
-			g.drawText(String(j + 1), 90 * i + 22, 90 - j * 22, 10, 10, Justification::centredLeft);
-		}
 	}
+
+	//FIFO monitor label
+	float xOffset = 15 + 1.1 * nAI / 4 * 70;
+	g.setFont(8);
+	g.drawText(String("0"), 90 * xOffset + 87, 100, 50, 10, Justification::centredLeft);
+	g.drawText(String("100"), 90 * xOffset + 87, 60, 50, 10, Justification::centredLeft);
+	g.drawText(String("%"), 90 * xOffset + 87, 80, 50, 10, Justification::centredLeft);
 
 	g.setColour(Colours::darkgrey);
 	g.setFont(10);
-	g.drawText(String("SAMPLE RATE"), 90 * (1)+32, 13, 100, 10, Justification::centredLeft);
+	g.drawText(String("SAMPLE RATE"), xOffset, 13, 100, 10, Justification::centredLeft);
 
 }
 
-FifoMonitor::FifoMonitor(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), fillPercentage(0.0)
+FifoMonitor::FifoMonitor(NIDAQThread* thread_) : thread(thread_), fillPercentage(0.0)
 {
 	startTimer(500); // update fill percentage every 0.5 seconds
 }
@@ -175,7 +183,7 @@ void AIButton::timerCallback()
 }
 
 BackgroundLoader::BackgroundLoader(NIDAQThread* thread, NIDAQEditor* editor)
-	: Thread("NIDAQ Loader"), np(thread), ed(editor)
+	: Thread("NIDAQ Loader"), t(thread), e(editor)
 {
 }
 
@@ -185,12 +193,12 @@ BackgroundLoader::~BackgroundLoader()
 
 void BackgroundLoader::run()
 {
-	/* Open the NPX-PXI probe connections in the background to prevent this plugin from blocking the main GUI*/
-	np->openConnection();
+	/* Open the NI-DAQmx connection in the background to prevent this plugin from blocking the main GUI*/
+	t->openConnection();
 
 	/* Let the main GUI know the plugin is done initializing */
 	MessageManagerLock mml;
-	CoreServices::updateSignalChain(ed);
+	CoreServices::updateSignalChain(e);
 	CoreServices::sendStatusMessage("NIDAQ plugin ready for acquisition!");
 
 }
@@ -202,54 +210,45 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 
 	thread = t;
 
-	for (int i = 0; i < 4; i++)
+	int nAI = t->getNumAnalogInputs();
+	nAI = 8;
+	int nDI = t->getNumDigitalInputs();
+	nDI = 8;
+
+	for (int i = 0; i < 8; i++)
 	{
+
 		int colIndex = i / 4;
 		int rowIndex = i % 4 + 1;
-		int x_pos = colIndex * 90 + 40;
-		int y_pos = 125 - rowIndex * 22;
+		int x_pos = colIndex * 75 + 40;
+		int y_pos = 5 + rowIndex * 26;
 
-		AIButton* p = new AIButton(i, thread);
-		p->setBounds(x_pos, y_pos, 15, 15);
-		p->addListener(this);
-		addAndMakeVisible(p);
-		aiButtons.add(p);
+		AIButton* b = new AIButton(i, thread);
+		b->setBounds(x_pos, y_pos, 15, 15);
+		b->addListener(this);
+		addAndMakeVisible(b);
+		aiButtons.add(b);
 
 		//p->setId(? );
 
 	}
 
-	int cols = aiButtons.size() / 4; 
-
-	for (int i = 0; i < cols; i++)
-	{
-		int x_pos = i * 90 + 70;
-		int y_pos = 50;
-
-		UtilityButton* b = new UtilityButton("", Font("Small Text", 13, Font::plain));
-		b->setBounds(x_pos, y_pos, 30, 20);
-		b->addListener(this);
-		addAndMakeVisible(b);
-		directoryButtons.add(b);
-
-		savingDirectories.add(File());
-
-		FifoMonitor* f = new FifoMonitor(i, thread);
-		f->setBounds(x_pos + 2, 75, 12, 50);
-		addAndMakeVisible(f);
-		fifoMonitors.add(f);
-	}
+	float xOffset = 15 + 1.1 * nAI / 4 * 70;
 
 	sampleRateSelectBox = new ComboBox("SampleRateSelectBox");
-	sampleRateSelectBox->setBounds(90 * (1)+32, 39, 38, 20);
-	sampleRateSelectBox->addItem(String("1MHz"),1);
+	sampleRateSelectBox->setBounds(xOffset, 39, 64, 20);
+	sampleRateSelectBox->addItem(String("30kHz"), 1);
 	sampleRateSelectBox->setSelectedItemIndex(0, false);
 	sampleRateSelectBox->addListener(this);
 	addAndMakeVisible(sampleRateSelectBox);
+	
+	fifoMonitor = new FifoMonitor(thread);
+	fifoMonitor->setBounds(xOffset + 2, 75, 12, 50);
+	addAndMakeVisible(fifoMonitor);
 
-	desiredWidth = 100 * 1 + 120;
+	desiredWidth = 260;
 
-	background = new EditorBackground(4,0);
+	background = new EditorBackground(t->getNumAnalogInputs(), t->getNumDigitalInputs());
 	background->setBounds(0, 15, 500, 150);
 	addAndMakeVisible(background);
 	background->toBack();
@@ -292,27 +291,6 @@ void NIDAQEditor::buttonEvent(Button* button)
 
 	if (!acquisitionIsActive)
 	{
-
-		if (directoryButtons.contains((UtilityButton*)button))
-		{
-			// open file chooser to select the saving location for this basestation
-			/*
-			int slotIndex = directoryButtons.indexOf((UtilityButton*)button);
-			File currentDirectory = thread->getDirectoryForSlot(slotIndex);
-			FileChooser fileChooser("Select directory for NPX file.", currentDirectory);
-			if (fileChooser.browseForDirectory())
-			{
-				File result = fileChooser.getResult();
-				String pathName = result.getFullPathName();
-				thread->setDirectoryForSlot(slotIndex, result);
-
-				savingDirectories.set(slotIndex, result);
-				UtilityButton* ub = (UtilityButton*)button;
-				ub->setLabel(pathName.substring(0, 3));
-			}
-			*/
-
-		}
 
 	}
 }

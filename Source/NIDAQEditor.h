@@ -104,7 +104,7 @@ private:
 class FifoMonitor : public Component, public Timer
 {
 public:
-	FifoMonitor(int id, NIDAQThread* thread);
+	FifoMonitor(NIDAQThread* thread);
 
 	void setFillPercentage(float percentage);
 
@@ -125,8 +125,8 @@ public:
 	~BackgroundLoader();
 	void run();
 private:
-	NIDAQThread* np;
-	NIDAQEditor* ed;
+	NIDAQThread* t;
+	NIDAQEditor* e;
 };
 
 class NIDAQEditor : public GenericEditor, public ComboBox::Listener
@@ -146,10 +146,9 @@ private:
 	OwnedArray<AIButton> aiButtons;
 	OwnedArray<DIButton> diButtons;
 
-	OwnedArray<UtilityButton> directoryButtons;
-	OwnedArray<FifoMonitor> fifoMonitors;
-
 	ScopedPointer<ComboBox> sampleRateSelectBox;
+	ScopedPointer<UtilityButton> directoryButton;
+	ScopedPointer<FifoMonitor> fifoMonitor;
 
 	Array<File> savingDirectories;
 

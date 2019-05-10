@@ -85,6 +85,9 @@ public:
 
 	// DataThread Methods
 
+	int getNumAnalogInputs();
+	int getNumDigitalInputs();
+
 	/** Returns the number of virtual subprocessors this source can generate */
 	unsigned int getNumSubProcessors() const override;
 
@@ -154,6 +157,8 @@ private:
 	NIDAQAPI api;
 
 	bool inputAvailable;
+	Array<AnalogIn> ai;
+	Array<DigitalIn> di;
 
 	bool isRecording;
 
