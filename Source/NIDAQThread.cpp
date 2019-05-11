@@ -69,7 +69,7 @@ void NIDAQThread::closeConnection()
 
 int NIDAQThread::getNumAnalogInputs()
 {
-	return 8;
+	return 10;
 }
 
 int NIDAQThread::getNumDigitalInputs()
