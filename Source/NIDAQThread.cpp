@@ -49,14 +49,12 @@ void NIDAQThread::openConnection()
 	if (false)
 	{
 		//Simulate connection
-		int numAnalogInputs = 8;
-		int numDigitalInputs = 8;
-		for (int i = 0; i < numAnalogInputs; i++)
+		for (int i = 0; i < getNumAnalogInputs(); i++)
 		{
 			ai.add(AnalogIn(i));
 		}
 
-		for (int i = 0; i < numDigitalInputs; i++)
+		for (int i = 0; i < getNumDigitalInputs(); i++)
 		{
 			di.add(DigitalIn(i));
 		}
@@ -72,13 +70,11 @@ void NIDAQThread::closeConnection()
 int NIDAQThread::getNumAnalogInputs()
 {
 	return 8;
-	return ai.size();
 }
 
 int NIDAQThread::getNumDigitalInputs()
 {
 	return 8;
-	return di.size();
 }
 
 /** Returns true if the data source is connected, false otherwise.*/

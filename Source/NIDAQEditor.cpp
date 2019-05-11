@@ -24,44 +24,118 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "NIDAQThread.h"
 #include "NIDAQEditor.h"
 
-EditorBackground::EditorBackground(int nAI, int nDI) {}
+EditorBackground::EditorBackground(int nAI, int nDI) : nAI(nAI), nDI(nDI) {}
 
 void EditorBackground::paint(Graphics& g)
 {
 
-	nAI = 8;
-	nDI = 8;
-
 	/* Draw AI channels */
-	for (int i = 0; i < 8; i++)
+
+	/*
+	[ AI0 o |FS| ] [ AI4 o |FS| ]
+	[ AI1 o |FS| ] [ AI5 o |FS| ]
+	[ AI2 o |FS| ] [ AI6 o |FS| ]
+	[ AI3 o |FS| ] [ AI7 o |FS| ]
+	*/
+
+	int channelsPerColumn = 4;
+
+	float aiChanOffsetX = 15;
+	float aiChanOffsetY = 12;
+	float aiChanWidth = 70;
+	float aiChanHeight = 22;
+	float paddingX = 1.07;
+	float paddingY = 1.18;
+
+	for (int i = 0; i < nAI; i++)
 	{
 
-		int colIndex = i / 4;
-		int rowIndex = i % 4;
-		int x_pos = colIndex * 90 + 40;
-		int y_pos = 5 + rowIndex * 26;
+		int colIndex = i / channelsPerColumn;
+		int rowIndex = i % channelsPerColumn;
 
 		g.setColour(Colours::lightgrey);
-		g.drawRoundedRectangle(15 + colIndex * 75, 12 + 26 * rowIndex, 70, 22, 4, 3);
+		g.drawRoundedRectangle(
+			aiChanOffsetX + paddingX * colIndex * aiChanWidth,
+			aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
+			aiChanWidth, aiChanHeight, 4, 3);
+
 		g.setColour(Colours::darkgrey);
-		g.drawRoundedRectangle(15 + colIndex * 75, 12 + 26 * rowIndex, 70, 22, 4, 1);
-		g.drawRoundedRectangle(15 + colIndex * 75 + 70 - 70 / 3, 16 + 26 * rowIndex, 70 / 3 - 4, 14, 1, 1);
+		g.drawRoundedRectangle(
+			aiChanOffsetX + paddingX * colIndex * aiChanWidth,
+			aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
+			aiChanWidth, aiChanHeight, 4, 1);
+
+		g.drawRoundedRectangle(
+			aiChanOffsetX + colIndex * paddingX * aiChanWidth + aiChanWidth - aiChanWidth / 3,
+			16 + paddingY * aiChanHeight * rowIndex,
+			aiChanWidth / 3 - 4, 14, 1, 0.4);
+
 		g.setFont(10);
-		g.drawText(String("AI") + String(i), 20 + colIndex * 75, 18 + 26 * rowIndex, 20, 10, Justification::centredLeft);
-		g.drawText(String("FS"), 66 + colIndex * 75, 18 + 26 * rowIndex, 20, 10, Justification::centredLeft);
+		g.drawText(
+			String("AI") + String(i),
+			5 + aiChanOffsetX + paddingX * colIndex * aiChanWidth,
+			7 + aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
+			20, 10, Justification::centredLeft);
+
+		g.drawText(String("FS"),
+			51 + aiChanOffsetX + paddingX * colIndex * aiChanWidth,
+			7 + aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
+			20, 10, Justification::centredLeft);
+
+	}
+
+	/* Draw DI lines */
+
+	/*
+	[ DI0 o ] [ DI4 o ]
+	[ DI1 o ] [ DI5 o ]
+	[ DI2 o ] [ DI6 o ]
+	[ DI3 o ] [ DI7 o ]
+	*/
+
+	float diChanOffsetX = aiChanOffsetX + nAI / channelsPerColumn * paddingX * aiChanWidth;
+	float diChanOffsetY = aiChanOffsetY;
+	float diChanWidth = 42;
+	float diChanHeight = 22;
+
+	for (int i = 0; i < nDI; i++)
+	{
+
+		int colIndex = i / channelsPerColumn;
+		int rowIndex = i % channelsPerColumn;
+
+		g.setColour(Colours::lightgrey);
+		g.drawRoundedRectangle(
+			diChanOffsetX + paddingX * colIndex * diChanWidth,
+			diChanOffsetY + paddingY * rowIndex * diChanHeight,
+			diChanWidth, diChanHeight, 4, 3);
+
+		g.setColour(Colours::darkgrey);
+		g.drawRoundedRectangle(
+			diChanOffsetX + paddingX * colIndex * diChanWidth,
+			diChanOffsetY + paddingY * rowIndex * diChanHeight,
+			diChanWidth, diChanHeight, 4, 1);
+
+		g.setFont(10);
+		g.drawText(
+			"DI" + String(i),
+			5 + diChanOffsetX + paddingX * colIndex * diChanWidth,
+			7 + diChanOffsetY + paddingY * rowIndex * diChanHeight,
+			20, 10, Justification::centredLeft);
 
 	}
 
 	//FIFO monitor label
-	float xOffset = 15 + 1.1 * nAI / 4 * 70;
+	float settingsOffsetX = diChanOffsetX + nDI / channelsPerColumn * 1.05 * paddingX * diChanWidth;
 	g.setFont(8);
-	g.drawText(String("0"), 90 * xOffset + 87, 100, 50, 10, Justification::centredLeft);
-	g.drawText(String("100"), 90 * xOffset + 87, 60, 50, 10, Justification::centredLeft);
-	g.drawText(String("%"), 90 * xOffset + 87, 80, 50, 10, Justification::centredLeft);
+	g.drawText(String("0"), settingsOffsetX + 16, 100, 50, 10, Justification::centredLeft);
+	g.drawText(String("100"), settingsOffsetX + 16, 60, 50, 10, Justification::centredLeft);
+	g.drawText(String("%"), settingsOffsetX + 16, 80, 50, 10, Justification::centredLeft);
 
 	g.setColour(Colours::darkgrey);
 	g.setFont(10);
-	g.drawText(String("SAMPLE RATE"), xOffset, 13, 100, 10, Justification::centredLeft);
+	g.drawText(String("SAMPLE RATE"), settingsOffsetX, 13, 100, 10, Justification::centredLeft);
+	g.drawText(String("USAGE"), settingsOffsetX, 48, 100, 10, Justification::centredLeft);
 
 }
 
@@ -182,6 +256,93 @@ void AIButton::timerCallback()
 
 }
 
+DIButton::DIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), status(0), selected(false)
+{
+	connected = false;
+
+	setRadioGroupId(979);
+
+	startTimer(500);
+
+}
+
+void DIButton::setId(int id_)
+{
+	id = id_;
+}
+
+int DIButton::getId()
+{
+	return id;
+}
+
+void DIButton::setSelectedState(bool state)
+{
+	selected = state;
+}
+
+void DIButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
+{
+	if (isMouseOver && connected)
+		g.setColour(Colours::antiquewhite);
+	else
+		g.setColour(Colours::darkgrey);
+	g.fillRoundedRectangle(0, 0, 15, 15, 4);
+
+	///g.setGradientFill(ColourGradient(Colours::lightcyan, 0, 0, Colours::lightskyblue, 10,10, true));
+
+	if (status == 1)
+	{
+		if (selected)
+		{
+			if (isMouseOver)
+				g.setColour(Colours::lightgreen);
+			else
+				g.setColour(Colours::lightgreen);
+		}
+		else {
+			if (isMouseOver)
+				g.setColour(Colours::green);
+			else
+				g.setColour(Colours::green);
+		}
+	}
+	else if (status == 2)
+	{
+		if (selected)
+		{
+			if (isMouseOver)
+				g.setColour(Colours::lightsalmon);
+			else
+				g.setColour(Colours::lightsalmon);
+		}
+		else {
+			if (isMouseOver)
+				g.setColour(Colours::orange);
+			else
+				g.setColour(Colours::orange);
+		}
+	}
+	else {
+		g.setColour(Colours::lightgrey);
+	}
+
+	g.fillRoundedRectangle(2, 2, 11, 11, 3);
+}
+
+void DIButton::setInputStatus(int status_)
+{
+	status = status_;
+
+	repaint();
+
+}
+
+void DIButton::timerCallback()
+{
+
+}
+
 BackgroundLoader::BackgroundLoader(NIDAQThread* thread, NIDAQEditor* editor)
 	: Thread("NIDAQ Loader"), t(thread), e(editor)
 {
@@ -211,11 +372,8 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	thread = t;
 
 	int nAI = t->getNumAnalogInputs();
-	nAI = 8;
-	int nDI = t->getNumDigitalInputs();
-	nDI = 8;
 
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < nAI; i++)
 	{
 
 		int colIndex = i / 4;
@@ -233,7 +391,27 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 
 	}
 
-	float xOffset = 15 + 1.1 * nAI / 4 * 70;
+	int nDI = t->getNumDigitalInputs();
+
+	for (int i = 0; i < nDI; i++)
+	{
+
+		int colIndex = i / 4;
+		int rowIndex = i % 4 + 1;
+		int x_pos = (nAI / 4) * 75 + 38 + colIndex * 44;
+		int y_pos = 5 + rowIndex * 26;
+
+		DIButton* b = new DIButton(i, thread);
+		b->setBounds(x_pos, y_pos, 15, 15);
+		b->addListener(this);
+		addAndMakeVisible(b);
+		diButtons.add(b);
+
+		//p->setId(? );
+
+	}
+
+	float xOffset = 20 + (nAI / 4) * 75 + (nDI / 4) * 44;
 
 	sampleRateSelectBox = new ComboBox("SampleRateSelectBox");
 	sampleRateSelectBox->setBounds(xOffset, 39, 64, 20);
@@ -246,9 +424,9 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	fifoMonitor->setBounds(xOffset + 2, 75, 12, 50);
 	addAndMakeVisible(fifoMonitor);
 
-	desiredWidth = 260;
+	desiredWidth = 15 + 75 * (nAI / 4) + 45 * (nDI / 4) + (nAI + nDI > 0 ? 90 : 0);
 
-	background = new EditorBackground(t->getNumAnalogInputs(), t->getNumDigitalInputs());
+	background = new EditorBackground(nAI, nDI);
 	background->setBounds(0, 15, 500, 150);
 	addAndMakeVisible(background);
 	background->toBack();

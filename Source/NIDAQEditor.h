@@ -85,6 +85,7 @@ public:
 	DIButton(int id, NIDAQThread* thread);
 
 	void setId(int id);
+	int getId();
 	void setSelectedState(bool);
 
 	void setInputStatus(int status);
