@@ -69,12 +69,12 @@ void NIDAQThread::closeConnection()
 
 int NIDAQThread::getNumAnalogInputs()
 {
-	return 10;
+	return 2;
 }
 
 int NIDAQThread::getNumDigitalInputs()
 {
-	return 8;
+	return 4;
 }
 
 /** Returns true if the data source is connected, false otherwise.*/

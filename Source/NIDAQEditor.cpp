@@ -38,7 +38,8 @@ void EditorBackground::paint(Graphics& g)
 	[ AI3 o |FS| ] [ AI7 o |FS| ]
 	*/
 
-	int channelsPerColumn = (nAI < 4 || nDI < 4) ? (nAI < nDI ? nAI : nDI) : 4;
+	int aiChannelsPerColumn = nAI < 4 ? nAI : 4;
+	int diChannelsPerColumn = nDI < 4 ? nDI : 4;
 
 	float aiChanOffsetX = 15;
 	float aiChanOffsetY = 12;
@@ -50,8 +51,8 @@ void EditorBackground::paint(Graphics& g)
 	for (int i = 0; i < nAI; i++)
 	{
 
-		int colIndex = i / channelsPerColumn;
-		int rowIndex = i % channelsPerColumn;
+		int colIndex = i / aiChannelsPerColumn;
+		int rowIndex = i % aiChannelsPerColumn;
 
 		g.setColour(Colours::lightgrey);
 		g.drawRoundedRectangle(
@@ -93,7 +94,7 @@ void EditorBackground::paint(Graphics& g)
 	[ DI3 o ] [ DI7 o ]
 	*/
 
-	float diChanOffsetX = aiChanOffsetX + nAI / channelsPerColumn * paddingX * aiChanWidth;
+	float diChanOffsetX = aiChanOffsetX + nAI / aiChannelsPerColumn * paddingX * aiChanWidth;
 	float diChanOffsetY = aiChanOffsetY;
 	float diChanWidth = 42;
 	float diChanHeight = 22;
@@ -101,8 +102,8 @@ void EditorBackground::paint(Graphics& g)
 	for (int i = 0; i < nDI; i++)
 	{
 
-		int colIndex = i / channelsPerColumn;
-		int rowIndex = i % channelsPerColumn;
+		int colIndex = i / diChannelsPerColumn;
+		int rowIndex = i % diChannelsPerColumn;
 
 		g.setColour(Colours::lightgrey);
 		g.drawRoundedRectangle(
@@ -126,7 +127,7 @@ void EditorBackground::paint(Graphics& g)
 	}
 
 	//FIFO monitor label
-	float settingsOffsetX = 20 + (nAI / channelsPerColumn) * 75 + (nDI / channelsPerColumn) * 44;
+	float settingsOffsetX = 20 + (nAI / aiChannelsPerColumn) * 75 + (nDI / diChannelsPerColumn) * 44;
 	g.setFont(8);
 	g.drawText(String("0"), settingsOffsetX + 16, 100, 50, 10, Justification::centredLeft);
 	g.drawText(String("100"), settingsOffsetX + 16, 60, 50, 10, Justification::centredLeft);
@@ -374,13 +375,14 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	int nAI = t->getNumAnalogInputs();
 	int nDI = t->getNumDigitalInputs();
 
-	int channelsPerColumn = (nAI < 4 || nDI < 4) ? (nAI < nDI ? nAI : nDI) : 4;
+	int aiChannelsPerColumn = nAI < 4 ? nAI : 4;
+	int diChannelsPerColumn = nDI < 4 ? nDI : 4;
 
 	for (int i = 0; i < nAI; i++)
 	{
 
-		int colIndex = i / channelsPerColumn;
-		int rowIndex = i % channelsPerColumn + 1;
+		int colIndex = i / aiChannelsPerColumn;
+		int rowIndex = i % aiChannelsPerColumn + 1;
 		int x_pos = colIndex * 75 + 40;
 		int y_pos = 5 + rowIndex * 26;
 
@@ -397,9 +399,9 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	for (int i = 0; i < nDI; i++)
 	{
 
-		int colIndex = i / channelsPerColumn;
-		int rowIndex = i % channelsPerColumn + 1;
-		int x_pos = (nAI / channelsPerColumn) * 75 + 38 + colIndex * 44;
+		int colIndex = i / diChannelsPerColumn;
+		int rowIndex = i % diChannelsPerColumn + 1;
+		int x_pos = (nAI / aiChannelsPerColumn) * 75 + 38 + colIndex * 44;
 		int y_pos = 5 + rowIndex * 26;
 
 		DIButton* b = new DIButton(i, thread);
@@ -412,7 +414,7 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 
 	}
 
-	float xOffset = 20 + (nAI / channelsPerColumn) * 75 + (nDI / channelsPerColumn) * 44;
+	float xOffset = 20 + (nAI / aiChannelsPerColumn) * 75 + (nDI / diChannelsPerColumn) * 44;
 
 	sampleRateSelectBox = new ComboBox("SampleRateSelectBox");
 	sampleRateSelectBox->setBounds(xOffset, 39, 64, 20);
@@ -425,7 +427,7 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	fifoMonitor->setBounds(xOffset + 2, 75, 12, 50);
 	addAndMakeVisible(fifoMonitor);
 
-	desiredWidth = 15 + 75 * (nAI / channelsPerColumn) + 45 * (nDI / channelsPerColumn) + (nAI + nDI > 0 ? 90 : 0);
+	desiredWidth = 15 + 75 * (nAI / aiChannelsPerColumn) + 45 * (nDI / diChannelsPerColumn) + (nAI + nDI > 0 ? 90 : 0);
 
 	background = new EditorBackground(nAI, nDI);
 	background->setBounds(0, 15, 500, 150);
