@@ -37,49 +37,51 @@ GenericEditor* NIDAQThread::createEditor(SourceNode* sn)
 NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), recordingTimer(this)
 {
 	progressBar = new ProgressBar(initializationProgress);
+
+	openConnection();
 }
 
 NIDAQThread::~NIDAQThread()
 {
-    closeConnection();
 }
 
 void NIDAQThread::openConnection()
 {
-
-	NIDAQmx* myTester = new NIDAQmx();
-	myTester->init();
-
-	/*
-	if (false)
-	{
-		//Simulate connection
-		for (int i = 0; i < getNumAnalogInputs(); i++)
-		{
-			ai.add(AnalogIn(i));
-		}
-
-		for (int i = 0; i < getNumDigitalInputs(); i++)
-		{
-			di.add(DigitalIn(i));
-		}
-	}
-	*/
+	mNIDAQ = new NIDAQmx();
 }
 
 void NIDAQThread::closeConnection()
 {
-
 }
 
 int NIDAQThread::getNumAnalogInputs()
 {
-	return 3;
+	return mNIDAQ->ai.size();
 }
 
 int NIDAQThread::getNumDigitalInputs()
 {
-	return 2;
+	return mNIDAQ->di.size();
+}
+
+Array<String> NIDAQThread::getVoltageRanges()
+{
+	Array<String> voltageRanges;
+	for (VRange range : mNIDAQ->aiVRanges)
+	{
+		voltageRanges.add(String(range.vmin) + "-" + String(range.vmax));
+	}
+	return voltageRanges;
+}
+
+Array<String> NIDAQThread::getSampleRates()
+{
+	Array<String> sampleRates;
+	for (auto rate : mNIDAQ->sampleRates)
+	{
+		sampleRates.add(String(rate) + " kS/S");
+	}
+	return sampleRates;
 }
 
 /** Returns true if the data source is connected, false otherwise.*/
@@ -91,8 +93,8 @@ bool NIDAQThread::foundInputSource()
 XmlElement NIDAQThread::getInfoXml()
 {
 
+	//TODO: 
 	XmlElement nidaq_info("NI-DAQmx");
-
 	XmlElement* api_info = new XmlElement("API");
 	//api_info->setAttribute("version", api.version);
 	nidaq_info.addChildElement(api_info);
@@ -191,14 +193,14 @@ int NIDAQThread::getNumTTLOutputs(int subProcessorIdx) const
 float NIDAQThread::getSampleRate(int subProcessorIdx) const
 {
 	//TODO
-	return 30000.0f;
+	return mNIDAQ->samplerate;
 }
 
 /** Returns the volts per bit of the data source.*/
 float NIDAQThread::getBitVolts(const DataChannel* chan) const
 {
 	//TODO
-	return 0.1950000f;
+	return mNIDAQ->bitVolts;
 }
 
 void NIDAQThread::setTriggerMode(bool trigger)

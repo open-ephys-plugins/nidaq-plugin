@@ -84,9 +84,11 @@ public:
 	bool stopAcquisition() override;
 
 	// DataThread Methods
-
 	int getNumAnalogInputs();
 	int getNumDigitalInputs();
+
+	Array<String> getVoltageRanges();
+	Array<String> getSampleRates();
 
 	/** Returns the number of virtual subprocessors this source can generate */
 	unsigned int getNumSubProcessors() const override;
@@ -155,6 +157,8 @@ public:
 private:
 
 	NIDAQAPI api;
+
+	ScopedPointer<NIDAQmx> mNIDAQ;
 
 	bool inputAvailable;
 	Array<AnalogIn> ai;

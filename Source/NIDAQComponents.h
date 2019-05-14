@@ -42,9 +42,8 @@ class NIDAQComponent
 {
 public:
 	NIDAQComponent();
-
+	~NIDAQComponent();
 	int serial_number;
-
 	virtual void getInfo() = 0;
 };
 
@@ -56,7 +55,13 @@ public:
 	void getInfo();
 };
 
-/* Front panel */
+/* Front Panel Terminal Block */
+
+struct VRange {
+	NIDAQ::float64 vmin, vmax;
+	VRange() : vmin(0), vmax(0) {}
+	VRange(NIDAQ::float64 rmin, NIDAQ::float64 rmax) : vmin(rmin), vmax(rmax) {}
+};
 
 class NIDAQmx : public NIDAQComponent
 {
@@ -66,27 +71,45 @@ public:
 
 	void getInfo();
 
-	void init();
+	void connect();
+
 	void getAIChannels();
+	void getAIVoltageRanges();
 	void getDIChannels();
 
+	bool setSampleRate();
+
+	void run();
+
+	friend class NIDAQThread;
+
 private:
+	ScopedPointer<String> deviceName;
+	ScopedPointer<String> productName;
+	ScopedPointer<String> deviceCategory;
+
 	Array<AnalogIn> 	ai;
 	Array<DigitalIn> 	di;
 
+	Array<VRange> aiVRanges;
+	Array<VRange> diVRanges;
+
+	float samplerate;
+	float bitVolts;
+	Array<int> sampleRates;
 };
 
 /* Inputs */ 
 
-class InputChannel : public NIDAQComponent
+class InputChannel
 {
 public:
-	InputChannel(int id);
+	InputChannel();
+	InputChannel(String id);
 	~InputChannel();
 
-	void getInfo();
-
-	int samplerate;
+	void setSampleRate(int rateIndex);
+	int getSampleRate();
 
 	void startAcquisition();
 	void stopAcquisition();
@@ -95,33 +118,42 @@ public:
 	File getSavingDirectory();
 
 	float getFillPercentage();
+
+	friend class NIDAQmx;
 	
 private:
-	int id; 					
+	String id;
+	bool enabled;
 	File savingDirectory;
 
 };
 
 class AnalogIn : public InputChannel
 {
-
 	enum SOURCE_TYPE {
 		FLOATING = 0,
 		GROUND_REF
 	};
 
 public:
-	AnalogIn(int id);
+	AnalogIn();
+	AnalogIn(String id);
 	~AnalogIn();
+
+	void setSourceType();
 	SOURCE_TYPE getSourceType();
+
+	friend class NIDAQmx;
+
 private:
-	
+	SOURCE_TYPE sourceType;
+	VRange voltageRange;
 };
 
 class DigitalIn : public InputChannel
 {
 public:
-	DigitalIn(int id);
+	DigitalIn(String id);
 	~DigitalIn();
 private:
 };

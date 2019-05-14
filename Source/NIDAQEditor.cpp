@@ -30,22 +30,14 @@ void EditorBackground::paint(Graphics& g)
 {
 
 	/* Draw AI channels */
-
-	/*
-	[ AI0 o |FS| ] [ AI4 o |FS| ]
-	[ AI1 o |FS| ] [ AI5 o |FS| ]
-	[ AI2 o |FS| ] [ AI6 o |FS| ]
-	[ AI3 o |FS| ] [ AI7 o |FS| ]
-	*/
-
 	int maxChannelsPerColumn = 4;
-	int aiChannelsPerColumn = nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;
-	int diChannelsPerColumn = nDI < maxChannelsPerColumn ? nDI : maxChannelsPerColumn;
+	int aiChannelsPerColumn = nAI > 0 && nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;
+	int diChannelsPerColumn = nDI > 0 && nDI < maxChannelsPerColumn ? nDI : maxChannelsPerColumn;
 
-	float aiChanOffsetX = 15;
-	float aiChanOffsetY = 12;
-	float aiChanWidth = 70;
-	float aiChanHeight = 22;
+	float aiChanOffsetX = 15; //pixels
+	float aiChanOffsetY = 12; //pixels
+	float aiChanWidth = 70;   //pixels
+	float aiChanHeight = 22;  //pixels TODO: normalize
 	float paddingX = 1.07;
 	float paddingY = 1.18;
 
@@ -87,15 +79,7 @@ void EditorBackground::paint(Graphics& g)
 	}
 
 	/* Draw DI lines */
-
-	/*
-	[ DI0 o ] [ DI4 o ]
-	[ DI1 o ] [ DI5 o ]
-	[ DI2 o ] [ DI6 o ]
-	[ DI3 o ] [ DI7 o ]
-	*/
-
-	float diChanOffsetX = aiChanOffsetX + nAI / aiChannelsPerColumn * paddingX * aiChanWidth;
+	float diChanOffsetX = aiChanOffsetX + ((nAI % maxChannelsPerColumn == 0 ? 0 : 1) + nAI / aiChannelsPerColumn) * paddingX * aiChanWidth;
 	float diChanOffsetY = aiChanOffsetY;
 	float diChanWidth = 42;
 	float diChanHeight = 22;
@@ -119,6 +103,8 @@ void EditorBackground::paint(Graphics& g)
 			diChanWidth, diChanHeight, 4, 1);
 
 		g.setFont(10);
+		if ( i >= 10 )
+			g.setFont(8);
 		g.drawText(
 			"DI" + String(i),
 			5 + diChanOffsetX + paddingX * colIndex * diChanWidth,
@@ -128,16 +114,17 @@ void EditorBackground::paint(Graphics& g)
 	}
 
 	//FIFO monitor label
-	float settingsOffsetX = 20 + (nAI / aiChannelsPerColumn) * 75 + (nDI / diChannelsPerColumn) * 44;
+	float settingsOffsetX = diChanOffsetX + ((nDI % maxChannelsPerColumn == 0 ? 0 : 1) + nDI / diChannelsPerColumn) * paddingX * diChanWidth + 5;
 	g.setFont(8);
-	g.drawText(String("0"), settingsOffsetX + 16, 100, 50, 10, Justification::centredLeft);
-	g.drawText(String("100"), settingsOffsetX + 16, 60, 50, 10, Justification::centredLeft);
-	g.drawText(String("%"), settingsOffsetX + 16, 80, 50, 10, Justification::centredLeft);
+	g.drawText(String("0"), settingsOffsetX, 100, 50, 10, Justification::centredLeft);
+	g.drawText(String("100"), settingsOffsetX + 65, 100, 50, 10, Justification::centredLeft);
+	g.drawText(String("%"), settingsOffsetX + 33, 100, 50, 10, Justification::centredLeft);
 
 	g.setColour(Colours::darkgrey);
 	g.setFont(10);
 	g.drawText(String("SAMPLE RATE"), settingsOffsetX, 13, 100, 10, Justification::centredLeft);
-	g.drawText(String("USAGE"), settingsOffsetX, 48, 100, 10, Justification::centredLeft);
+	g.drawText(String("AI VOLTAGE RANGE"), settingsOffsetX, 45, 100, 10, Justification::centredLeft);
+	g.drawText(String("USAGE"), settingsOffsetX, 77, 100, 10, Justification::centredLeft);
 
 }
 
@@ -375,24 +362,23 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 
 	thread = t;
 
-	t->openConnection();
-
 	int nAI = t->getNumAnalogInputs();
 	int nDI = t->getNumDigitalInputs();
 
-	int aiChannelsPerColumn = nAI < 4 ? nAI : 4;
-	int diChannelsPerColumn = nDI < 4 ? nDI : 4;
+	int maxChannelsPerColumn = 4;
+	int aiChannelsPerColumn = nAI > 0 && nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;
+	int diChannelsPerColumn = nDI > 0 && nDI < maxChannelsPerColumn ? nDI : maxChannelsPerColumn;
 
 	for (int i = 0; i < nAI; i++)
 	{
 
 		int colIndex = i / aiChannelsPerColumn;
 		int rowIndex = i % aiChannelsPerColumn + 1;
-		int x_pos = colIndex * 75 + 40;
+		int xOffset = colIndex * 75 + 40;
 		int y_pos = 5 + rowIndex * 26;
 
 		AIButton* b = new AIButton(i, thread);
-		b->setBounds(x_pos, y_pos, 15, 15);
+		b->setBounds(xOffset, y_pos, 15, 15);
 		b->addListener(this);
 		addAndMakeVisible(b);
 		aiButtons.add(b);
@@ -401,16 +387,17 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 
 	}
 
+	int xOffset;
 	for (int i = 0; i < nDI; i++)
 	{
 
 		int colIndex = i / diChannelsPerColumn;
 		int rowIndex = i % diChannelsPerColumn + 1;
-		int x_pos = (nAI / aiChannelsPerColumn) * 75 + 38 + colIndex * 44;
+		xOffset = ((nAI % maxChannelsPerColumn == 0 ? 0 : 1) + nAI / aiChannelsPerColumn) * 75 + 38 + colIndex * 45;
 		int y_pos = 5 + rowIndex * 26;
 
 		DIButton* b = new DIButton(i, thread);
-		b->setBounds(x_pos, y_pos, 15, 15);
+		b->setBounds(xOffset, y_pos, 15, 15);
 		b->addListener(this);
 		addAndMakeVisible(b);
 		diButtons.add(b);
@@ -419,20 +406,35 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 
 	}
 
-	float xOffset = 20 + (nAI / aiChannelsPerColumn) * 75 + (nDI / diChannelsPerColumn) * 44;
+	xOffset = xOffset + 25;
 
 	sampleRateSelectBox = new ComboBox("SampleRateSelectBox");
-	sampleRateSelectBox->setBounds(xOffset, 39, 64, 20);
-	sampleRateSelectBox->addItem(String("30kHz"), 1);
+	sampleRateSelectBox->setBounds(xOffset, 39, 85, 20);
+	Array<String> sampleRates = t->getSampleRates();
+	for (int i = 0; i < sampleRates.size(); i++)
+	{
+		sampleRateSelectBox->addItem(sampleRates[i], i + 1);
+	}
 	sampleRateSelectBox->setSelectedItemIndex(0, false);
 	sampleRateSelectBox->addListener(this);
 	addAndMakeVisible(sampleRateSelectBox);
+
+	voltageRangeSelectBox = new ComboBox("VoltageRangeSelectBox");
+	voltageRangeSelectBox->setBounds(xOffset, 70, 85, 20);
+	Array<String> voltageRanges = t->getVoltageRanges();
+	for (int i = 0; i < voltageRanges.size(); i++)
+	{
+		voltageRangeSelectBox->addItem(voltageRanges[i], i + 1);
+	}
+	voltageRangeSelectBox->setSelectedItemIndex(0, false);
+	voltageRangeSelectBox->addListener(this);
+	addAndMakeVisible(voltageRangeSelectBox);
 	
 	fifoMonitor = new FifoMonitor(thread);
-	fifoMonitor->setBounds(xOffset + 2, 75, 12, 50);
+	fifoMonitor->setBounds(xOffset + 2, 105, 70, 12);
 	addAndMakeVisible(fifoMonitor);
 
-	desiredWidth = 15 + 75 * (nAI / aiChannelsPerColumn) + 45 * (nDI / diChannelsPerColumn) + (nAI + nDI > 0 ? 90 : 0);
+	desiredWidth = xOffset + 100;
 
 	background = new EditorBackground(nAI, nDI);
 	background->setBounds(0, 15, 500, 150);
@@ -440,9 +442,11 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	background->toBack();
 	background->repaint();
 
+	/*
+
 	uiLoader = new BackgroundLoader(t, this);
 	uiLoader->startThread();
-
+	*/
 }
 
 NIDAQEditor::~NIDAQEditor()

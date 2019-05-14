@@ -23,59 +23,149 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "NIDAQComponents.h"
 
+NIDAQComponent::NIDAQComponent() : serial_number(0) {}
+NIDAQComponent::~NIDAQComponent() {}
+
 void NIDAQAPI::getInfo()
 {
 	//TODO
 }
 
-NIDAQComponent::NIDAQComponent() : serial_number(-1) {}
+NIDAQmx::NIDAQmx()
+{
+	connect();
+	getAIChannels();
+	getAIVoltageRanges();
+	getDIChannels();
 
-NIDAQmx::NIDAQmx() {}
+	const float rates[] = { 
+		1.0, 1.25, 1.5,
+		2.0, 2.5, 3.0, 3.33,
+		4.0, 5, 6.25, 8.0,
+		10.0, 12.5, 15.0,
+		20.0, 25.0, 30.0 };
 
-NIDAQmx::~NIDAQmx() {}
+	for (auto rate : rates)
+	{
+		sampleRates.add(1000 * rate);
+	}
+
+	run();
+}
+
+NIDAQmx::~NIDAQmx() {
+}
 
 void NIDAQmx::getInfo()
 {
 	
 }
 
-void NIDAQmx::init()
+void NIDAQmx::connect()
 {
-
-	std::cout << "In init() method!!!" << std::endl;
-
 	char data[2048] = { 0 };
-
 	NIDAQ::DAQmxGetSysDevNames(data, sizeof(data));
+	//This will return a comma-seperated list of dev names into data
+	//For now we are only supporting the first device found
+	//TODO: Add support for multiple devices
+	deviceName = new String(&data[0]);
+	std::cout << "Device Name: " << String(deviceName->getCharPointer()) << std::endl;
 
-	std::cout << "Found NI-DAQ device: " << data << std::endl;
+	NIDAQ::DAQmxGetDevProductType(deviceName->getCharPointer(), &data[0], sizeof(data));
+	productName = new String(&data[0]);
+	std::cout << "Product Name: " << String(productName->getCharPointer()) << std::endl;
 
+	NIDAQ::int32 buf;
+	NIDAQ::DAQmxGetDevProductCategory(deviceName->getCharPointer(), &buf);
+	deviceCategory = new String(buf);
+	std::cout << "Device Category: " << String(deviceCategory->getCharPointer()) << std::endl;
 
 }
 
 void NIDAQmx::getAIChannels()
 {
 
-	NIDAQ::uInt32 dataSize = 65536;
-	std::vector<char> data(dataSize);
-	//NIDAQ::DAQmxGetDevAIPhysicalChans(dataSize);
-	for (int i = 0; i < 8; i++)
+	char data[2048];
+	NIDAQ::DAQmxGetDevAIPhysicalChans(deviceName->getCharPointer(), &data[0], sizeof(data));
+
+	StringArray channel_list;
+	channel_list.addTokens(&data[0], ", ", "\"");
+
+	std::cout << "Found analog inputs:" << std::endl;
+	for (int i = 0; i < channel_list.size(); i++)
 	{
-		ai.add(AnalogIn(i));
+		if (channel_list[i].length() > 0)
+		{
+			std::cout << channel_list[i] << std::endl;
+			ai.add(AnalogIn(channel_list[i]));
+		}
+	}
+
+}
+
+void NIDAQmx::getAIVoltageRanges()
+{
+	NIDAQ::float64 data[512];
+	NIDAQ::DAQmxGetDevAIVoltageRngs(deviceName->getCharPointer(), &data[0], sizeof(data));
+
+	for (int i = 0; i < 512; i += 2)
+	{
+		NIDAQ::float64 vmin = data[i];
+		NIDAQ::float64 vmax = data[i + 1];
+		if (vmin == vmax)
+			break;
+		aiVRanges.add(VRange(vmin, vmax));
 	}
 }
 
 void NIDAQmx::getDIChannels()
 {
-	for (int i = 0; i < 8; i++)
+	char data[2048];
+	NIDAQ::DAQmxGetDevTerminals(deviceName->getCharPointer(), &data[0], sizeof(data));
+	std::cout << "Found PFI Channels: " << std::endl;
+
+	StringArray channel_list;
+	channel_list.addTokens(&data[0], ", ", "\"");
+
+	for (int i = 0; i < channel_list.size(); i++)
 	{
-		di.add(DigitalIn(i));
+		StringArray channel_type;
+		channel_type.addTokens(channel_list[i], "/", "\"");
+		if (channel_list[i].contains("PFI"))
+		{
+			std::cout << channel_list[i].substring(1) << std::endl;
+			di.add(DigitalIn(channel_list[i].substring(1)));
+		}
 	}
 }
 
-InputChannel::InputChannel(int id) : id(id), samplerate(1e+6)
+void NIDAQmx::run()
 {
 
+	NIDAQ::TaskHandle taskHandle = 0;
+	NIDAQ::DAQmxCreateTask("", &taskHandle);
+
+	for (int i = 0; i < ai.size(); i++) {
+		NIDAQ::DAQmxCreateAIVoltageChan(
+			taskHandle,
+			ai[i].id.getCharPointer(),		// physical channel name
+			ai[i].id.getCharPointer(),		// channel name
+			DAQmx_Val_Cfg_Default,			// terminal configuration
+			ai[i].voltageRange.vmin,		// channel max and min
+			ai[i].voltageRange.vmax,
+			DAQmx_Val_Volts,
+			NULL);
+	}
+	
+}
+
+InputChannel::InputChannel()
+{
+
+}
+
+InputChannel::InputChannel(String id) : id(id), enabled(true)
+{
 }
 
 InputChannel::~InputChannel()
@@ -83,21 +173,21 @@ InputChannel::~InputChannel()
 
 }
 
-void InputChannel::getInfo()
+AnalogIn::AnalogIn()
 {
-	//TODO
 }
 
-AnalogIn::AnalogIn(int id) : InputChannel(id)
+AnalogIn::AnalogIn(String id) : InputChannel(id)
 {
 }
+
 
 AnalogIn::~AnalogIn()
 {
 
 }
 
-DigitalIn::DigitalIn(int id) : InputChannel(id)
+DigitalIn::DigitalIn(String id) : InputChannel(id)
 {
 
 }
@@ -106,5 +196,6 @@ DigitalIn::~DigitalIn()
 {
 
 }
+
 
 
