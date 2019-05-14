@@ -46,6 +46,11 @@ NIDAQThread::~NIDAQThread()
 
 void NIDAQThread::openConnection()
 {
+
+	NIDAQmx* myTester = new NIDAQmx();
+	myTester->init();
+
+	/*
 	if (false)
 	{
 		//Simulate connection
@@ -59,7 +64,7 @@ void NIDAQThread::openConnection()
 			di.add(DigitalIn(i));
 		}
 	}
-
+	*/
 }
 
 void NIDAQThread::closeConnection()
@@ -69,12 +74,12 @@ void NIDAQThread::closeConnection()
 
 int NIDAQThread::getNumAnalogInputs()
 {
-	return 2;
+	return 3;
 }
 
 int NIDAQThread::getNumDigitalInputs()
 {
-	return 4;
+	return 2;
 }
 
 /** Returns true if the data source is connected, false otherwise.*/

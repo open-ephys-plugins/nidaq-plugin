@@ -1,16 +1,39 @@
-cmake_minimum_required(VERSION 3.5.0)
-project(ni-daq)
+# Setup the minimum version required of CMake to generate the Makefile:
+# Raises a FATAL_ERROR if version < 3.5
+cmake_minimum_required(VERSION 3.5.0 FATAL_ERROR)
+
+# Setup the name for our project. 
+# Set code language as second param
+project(ni-daq CXX)
+
+# Set the project source dir (just convention)
+set( NIDAQMX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Source)
+set( NIDAQMX_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} )
+
+# Set the current version of the code
+set ( NIDAQMX_VERSION_MAJOR 0)
+set ( NIDAQMX_VERSION_MINOR 1)
+set ( NIDAQMX_VERSION_PATCH 0)
+
+# Set the plugin name
+set(PLUGIN_NAME NI-DAQmx)
+
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	set(LINUX 1)
 endif()
 
-#change this line to modify the plugin name
-set(PLUGIN_NAME NI-DAQmx)
-#change this if the base GUI code is located somewhere else
 set(GUI_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../plugin-GUI)
+set(GUI_DEBUG_DIR ${GUI_BASE_DIR}/Builds/VisualStudio2013/x64/Debug/bin/plugins)
+set(NIDAQMX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Source)
+set(NIDAQMX_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Source/nidaq-api)
+set(NIDAQMX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Source/nidaq-api/lib64/msvc/NIDAQmx.lib)
 
-include_directories(${GUI_BASE_DIR}/JuceLibraryCode ${GUI_BASE_DIR}/JuceLibraryCode/modules ${GUI_BASE_DIR}/Source/Plugins/Headers)
+include_directories(
+	${GUI_BASE_DIR}/JuceLibraryCode
+	${GUI_BASE_DIR}/JuceLibraryCode/modules
+	${GUI_BASE_DIR}/Source/Plugins/Headers
+	${NIDAQMX_INCLUDE_DIR})
 
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS
 	OEPLUGIN
@@ -22,9 +45,7 @@ set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS
 	$<$<CONFIG:Release>:NDEBUG=1>
 	)
 
-
-set(SOURCE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../Source)
-file(GLOB_RECURSE SRC_FILES LIST_DIRECTORIES false "${SOURCE_PATH}/*.cpp" "${SOURCE_PATH}/*.h")
+file(GLOB_RECURSE SRC_FILES LIST_DIRECTORIES false "${NIDAQMX_SOURCE_DIR}/*.cpp" "${NIDAQMX_SOURCE_DIR}/*.h")
 
 if (APPLE)
 	add_library(${PLUGIN_NAME} MODULE ${SRC_FILES})
@@ -44,10 +65,12 @@ if(MSVC)
 	target_link_directories(${PLUGIN_NAME} PUBLIC $<$<CONFIG:Debug>:${GUI_BIN_DIR}/Debug/bin>)
 	target_link_directories(${PLUGIN_NAME} PUBLIC $<$<CONFIG:Release>:${GUI_BIN_DIR}/Release/bin>)
 	target_link_libraries(${PLUGIN_NAME} open-ephys.lib)
+	target_link_libraries(${PLUGIN_NAME} "${NIDAQMX_LINK_DIR}")
 	target_compile_options(${PLUGIN_NAME} PRIVATE /sdl-)
 	
 	install(TARGETS ${PLUGIN_NAME} RUNTIME DESTINATION ${GUI_BIN_DIR}/Debug/bin/plugins CONFIGURATIONS Debug)
 	install(TARGETS ${PLUGIN_NAME} RUNTIME DESTINATION ${GUI_BIN_DIR}/Release/bin/plugins CONFIGURATIONS Release)
+
 elseif(LINUX)
 	set(GUI_BIN_DIR ${GUI_BASE_DIR}/Builds/Linux/build)
 
@@ -71,7 +94,7 @@ endif()
 
 foreach( src_file IN ITEMS ${SRC_FILES})
 	get_filename_component(src_path "${src_file}" PATH)
-	file(RELATIVE_PATH src_path_rel "${SOURCE_PATH}" "${src_path}")
+	file(RELATIVE_PATH src_path_rel "${NIDAQMX_SOURCE_DIR}" "${src_path}")
 	string(REPLACE "/" "\\" group_name "${src_path_rel}")
 	source_group("${group_name}" FILES "${src_file}")
 endforeach()

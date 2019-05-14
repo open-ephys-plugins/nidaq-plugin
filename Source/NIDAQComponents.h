@@ -66,6 +66,7 @@ public:
 
 	void getInfo();
 
+	void init();
 	void getAIChannels();
 	void getDIChannels();
 

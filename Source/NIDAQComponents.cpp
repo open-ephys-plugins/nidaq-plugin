@@ -39,8 +39,26 @@ void NIDAQmx::getInfo()
 	
 }
 
+void NIDAQmx::init()
+{
+
+	std::cout << "In init() method!!!" << std::endl;
+
+	char data[2048] = { 0 };
+
+	NIDAQ::DAQmxGetSysDevNames(data, sizeof(data));
+
+	std::cout << "Found NI-DAQ device: " << data << std::endl;
+
+
+}
+
 void NIDAQmx::getAIChannels()
 {
+
+	NIDAQ::uInt32 dataSize = 65536;
+	std::vector<char> data(dataSize);
+	//NIDAQ::DAQmxGetDevAIPhysicalChans(dataSize);
 	for (int i = 0; i < 8; i++)
 	{
 		ai.add(AnalogIn(i));

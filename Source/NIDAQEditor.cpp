@@ -38,8 +38,9 @@ void EditorBackground::paint(Graphics& g)
 	[ AI3 o |FS| ] [ AI7 o |FS| ]
 	*/
 
-	int aiChannelsPerColumn = nAI < 4 ? nAI : 4;
-	int diChannelsPerColumn = nDI < 4 ? nDI : 4;
+	int maxChannelsPerColumn = 4;
+	int aiChannelsPerColumn = nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;
+	int diChannelsPerColumn = nDI < maxChannelsPerColumn ? nDI : maxChannelsPerColumn;
 
 	float aiChanOffsetX = 15;
 	float aiChanOffsetY = 12;
@@ -355,7 +356,9 @@ BackgroundLoader::~BackgroundLoader()
 
 void BackgroundLoader::run()
 {
-	/* Open the NI-DAQmx connection in the background to prevent this plugin from blocking the main GUI*/
+	/* This process is used to initiate processor loading in the background to prevent this plugin from blocking the main GUI*/
+
+	/*Basic steps:*/
 	t->openConnection();
 
 	/* Let the main GUI know the plugin is done initializing */
@@ -371,6 +374,8 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 {
 
 	thread = t;
+
+	t->openConnection();
 
 	int nAI = t->getNumAnalogInputs();
 	int nDI = t->getNumDigitalInputs();

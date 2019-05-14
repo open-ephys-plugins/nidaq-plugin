@@ -1,50 +1,4 @@
 The system is: Windows - 10.0.16299 - AMD64
-Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
-Compiler:  
-Build flags: 
-Id flags:  
-
-The output was:
-0
-Microsoft (R) Build Engine version 12.0.40629.0
-[Microsoft .NET Framework, version 4.0.30319.42000]
-Copyright (C) Microsoft Corporation. All rights reserved.
-
-Build started 5/9/2019 10:19:14 AM.
-Project "C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\3.14.3\CompilerIdC\CompilerIdC.vcxproj" on node 1 (default targets).
-PrepareForBuild:
-  Creating directory "Debug\".
-  Creating directory "Debug\CompilerIdC.tlog\".
-InitializeBuildStatus:
-  Creating "Debug\CompilerIdC.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
-ClCompile:
-  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\CL.exe /c /nologo /W0 /WX- /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TC /errorReport:queue CMakeCCompilerId.c
-  CMakeCCompilerId.c
-Link:
-  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:QUEUE /OUT:".\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\CompilerIdC.lib" /MACHINE:X64 Debug\CMakeCCompilerId.obj
-  CompilerIdC.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\3.14.3\CompilerIdC\.\CompilerIdC.exe
-PostBuildEvent:
-  for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
-  :VCEnd
-  CMAKE_C_COMPILER=C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64\cl.exe
-FinalizeBuildStatus:
-  Deleting file "Debug\CompilerIdC.tlog\unsuccessfulbuild".
-  Touching "Debug\CompilerIdC.tlog\CompilerIdC.lastbuildstate".
-Done Building Project "C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\3.14.3\CompilerIdC\CompilerIdC.vcxproj" (default targets).
-
-Build succeeded.
-    0 Warning(s)
-    0 Error(s)
-
-Time Elapsed 00:00:03.02
-
-
-Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
-
-Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
-
-The C compiler identification is MSVC, found in "C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/3.14.3/CompilerIdC/CompilerIdC.exe"
-
 Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
 Compiler:  
 Build flags: 
@@ -56,7 +10,7 @@ Microsoft (R) Build Engine version 12.0.40629.0
 [Microsoft .NET Framework, version 4.0.30319.42000]
 Copyright (C) Microsoft Corporation. All rights reserved.
 
-Build started 5/9/2019 10:19:17 AM.
+Build started 5/13/2019 5:03:23 PM.
 Project "C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\3.14.3\CompilerIdCXX\CompilerIdCXX.vcxproj" on node 1 (default targets).
 PrepareForBuild:
   Creating directory "Debug\".
@@ -82,7 +36,7 @@ Build succeeded.
     0 Warning(s)
     0 Error(s)
 
-Time Elapsed 00:00:02.92
+Time Elapsed 00:00:02.74
 
 
 Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -91,65 +45,10 @@ Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" p
 
 The CXX compiler identification is MSVC, found in "C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/3.14.3/CompilerIdCXX/CompilerIdCXX.exe"
 
-Determining if the C compiler works passed with the following output:
-Change Dir: C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/CMakeTmp
-
-Run Build Command(s):C:/Program Files (x86)/MSBuild/12.0/bin/MSBuild.exe cmTC_46ed3.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=12.0 /v:m 
-Microsoft (R) Build Engine version 12.0.40629.0
-[Microsoft .NET Framework, version 4.0.30319.42000]
-Copyright (C) Microsoft Corporation. All rights reserved.
-
-  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.40629 for x64
-  Copyright (C) Microsoft Corporation.  All rights reserved.
-  
-  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTC_46ed3.dir\Debug\\" /Fd"cmTC_46ed3.dir\Debug\vc120.pdb" /Gd /TC /errorReport:queue "C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\testCCompiler.c"
-  
-  testCCompiler.c
-  cmTC_46ed3.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\Debug\cmTC_46ed3.exe
-
-
-Detecting C compiler ABI info compiled with the following output:
-Change Dir: C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/CMakeTmp
-
-Run Build Command(s):C:/Program Files (x86)/MSBuild/12.0/bin/MSBuild.exe cmTC_2520e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=12.0 /v:m 
-Microsoft (R) Build Engine version 12.0.40629.0
-[Microsoft .NET Framework, version 4.0.30319.42000]
-Copyright (C) Microsoft Corporation. All rights reserved.
-
-  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.40629 for x64
-  Copyright (C) Microsoft Corporation.  All rights reserved.
-  
-  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTC_2520e.dir\Debug\\" /Fd"cmTC_2520e.dir\Debug\vc120.pdb" /Gd /TC /errorReport:queue "C:\Program Files\MINGW\mingw64\share\cmake-3.14\Modules\CMakeCCompilerABI.c"
-  
-  CMakeCCompilerABI.c
-  cmTC_2520e.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\Debug\cmTC_2520e.exe
-
-
-
-
-Detecting C [] compiler features compiled with the following output:
-Change Dir: C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/CMakeTmp
-
-Run Build Command(s):C:/Program Files (x86)/MSBuild/12.0/bin/MSBuild.exe cmTC_edb7a.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=12.0 /v:m 
-Microsoft (R) Build Engine version 12.0.40629.0
-[Microsoft .NET Framework, version 4.0.30319.42000]
-Copyright (C) Microsoft Corporation. All rights reserved.
-
-  Microsoft (R) C/C++ Optimizing Compiler Version 18.00.40629 for x64
-  Copyright (C) Microsoft Corporation.  All rights reserved.
-  
-  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"cmTC_edb7a.dir\Debug\\" /Fd"cmTC_edb7a.dir\Debug\vc120.pdb" /Gd /TC /errorReport:queue "C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\feature_tests.c"
-  
-  feature_tests.c
-  cmTC_edb7a.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\Debug\cmTC_edb7a.exe
-
-
-    Feature record: C_FEATURE:1c_function_prototypes
-    Feature record: C_FEATURE:1c_variadic_macros
 Determining if the CXX compiler works passed with the following output:
 Change Dir: C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/CMakeTmp
 
-Run Build Command(s):C:/Program Files (x86)/MSBuild/12.0/bin/MSBuild.exe cmTC_dd2f0.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=12.0 /v:m 
+Run Build Command(s):C:/Program Files (x86)/MSBuild/12.0/bin/MSBuild.exe cmTC_b846a.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=12.0 /v:m 
 Microsoft (R) Build Engine version 12.0.40629.0
 [Microsoft .NET Framework, version 4.0.30319.42000]
 Copyright (C) Microsoft Corporation. All rights reserved.
@@ -157,16 +56,16 @@ Copyright (C) Microsoft Corporation. All rights reserved.
   Microsoft (R) C/C++ Optimizing Compiler Version 18.00.40629 for x64
   Copyright (C) Microsoft Corporation.  All rights reserved.
   
-  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTC_dd2f0.dir\Debug\\" /Fd"cmTC_dd2f0.dir\Debug\vc120.pdb" /Gd /TP /errorReport:queue "C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\testCXXCompiler.cxx"
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTC_b846a.dir\Debug\\" /Fd"cmTC_b846a.dir\Debug\vc120.pdb" /Gd /TP /errorReport:queue "C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\testCXXCompiler.cxx"
   
   testCXXCompiler.cxx
-  cmTC_dd2f0.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\Debug\cmTC_dd2f0.exe
+  cmTC_b846a.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\Debug\cmTC_b846a.exe
 
 
 Detecting CXX compiler ABI info compiled with the following output:
 Change Dir: C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/CMakeTmp
 
-Run Build Command(s):C:/Program Files (x86)/MSBuild/12.0/bin/MSBuild.exe cmTC_bcb1e.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=12.0 /v:m 
+Run Build Command(s):C:/Program Files (x86)/MSBuild/12.0/bin/MSBuild.exe cmTC_ebe7c.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=12.0 /v:m 
 Microsoft (R) Build Engine version 12.0.40629.0
 [Microsoft .NET Framework, version 4.0.30319.42000]
 Copyright (C) Microsoft Corporation. All rights reserved.
@@ -174,10 +73,10 @@ Copyright (C) Microsoft Corporation. All rights reserved.
   Microsoft (R) C/C++ Optimizing Compiler Version 18.00.40629 for x64
   Copyright (C) Microsoft Corporation.  All rights reserved.
   
-  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTC_bcb1e.dir\Debug\\" /Fd"cmTC_bcb1e.dir\Debug\vc120.pdb" /Gd /TP /errorReport:queue "C:\Program Files\MINGW\mingw64\share\cmake-3.14\Modules\CMakeCXXCompilerABI.cpp"
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTC_ebe7c.dir\Debug\\" /Fd"cmTC_ebe7c.dir\Debug\vc120.pdb" /Gd /TP /errorReport:queue "C:\Program Files\MINGW\mingw64\share\cmake-3.14\Modules\CMakeCXXCompilerABI.cpp"
   
   CMakeCXXCompilerABI.cpp
-  cmTC_bcb1e.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\Debug\cmTC_bcb1e.exe
+  cmTC_ebe7c.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\Debug\cmTC_ebe7c.exe
 
 
 
@@ -185,7 +84,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
 Detecting CXX [] compiler features compiled with the following output:
 Change Dir: C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/CMakeTmp
 
-Run Build Command(s):C:/Program Files (x86)/MSBuild/12.0/bin/MSBuild.exe cmTC_5bd8d.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=12.0 /v:m 
+Run Build Command(s):C:/Program Files (x86)/MSBuild/12.0/bin/MSBuild.exe cmTC_220b6.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=12.0 /v:m 
 Microsoft (R) Build Engine version 12.0.40629.0
 [Microsoft .NET Framework, version 4.0.30319.42000]
 Copyright (C) Microsoft Corporation. All rights reserved.
@@ -193,10 +92,10 @@ Copyright (C) Microsoft Corporation. All rights reserved.
   Microsoft (R) C/C++ Optimizing Compiler Version 18.00.40629 for x64
   Copyright (C) Microsoft Corporation.  All rights reserved.
   
-  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTC_5bd8d.dir\Debug\\" /Fd"cmTC_5bd8d.dir\Debug\vc120.pdb" /Gd /TP /errorReport:queue "C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\feature_tests.cxx"
+  cl /c /Zi /W3 /WX- /Od /Ob0 /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\"Debug\"" /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"cmTC_220b6.dir\Debug\\" /Fd"cmTC_220b6.dir\Debug\vc120.pdb" /Gd /TP /errorReport:queue "C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\feature_tests.cxx"
   
   feature_tests.cxx
-  cmTC_5bd8d.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\Debug\cmTC_5bd8d.exe
+  cmTC_220b6.vcxproj -> C:\Users\pavel.kulik\Projects\ni-daq\Builds\VS2013\CMakeFiles\CMakeTmp\Debug\cmTC_220b6.exe
 
 
     Feature record: CXX_FEATURE:0cxx_aggregate_default_initializers
