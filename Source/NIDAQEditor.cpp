@@ -362,8 +362,11 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 
 	thread = t;
 
-	int nAI = t->getNumAnalogInputs();
-	int nDI = t->getNumDigitalInputs();
+	//int nAI = t->getNumAnalogInputs();
+	//int nDI = t->getNumDigitalInputs();
+
+	int nAI = 8;
+	int nDI = 10;
 
 	int maxChannelsPerColumn = 4;
 	int aiChannelsPerColumn = nAI > 0 && nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;

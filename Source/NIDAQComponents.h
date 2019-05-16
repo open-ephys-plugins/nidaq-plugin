@@ -55,7 +55,20 @@ public:
 	void getInfo();
 };
 
-/* Front Panel Terminal Block */
+class NIDAQmxDeviceManager
+{
+public:
+	NIDAQmxDeviceManager();
+	~NIDAQmxDeviceManager();
+
+	void scanForDevices();
+
+	friend class NIDAQThread;
+
+private:
+	Array<String> devices;
+	
+};
 
 struct VRange {
 	NIDAQ::float64 vmin, vmax;
@@ -66,7 +79,7 @@ struct VRange {
 class NIDAQmx : public NIDAQComponent
 {
 public:
-	NIDAQmx();
+	NIDAQmx(const char* deviceName);
 	~NIDAQmx();
 
 	void getInfo();
@@ -84,9 +97,11 @@ public:
 	friend class NIDAQThread;
 
 private:
-	ScopedPointer<String> deviceName;
-	ScopedPointer<String> productName;
-	ScopedPointer<String> deviceCategory;
+	String deviceName;
+	String productName;
+	NIDAQ::int32 deviceCategory;
+
+	bool simAISamplingSupported;
 
 	Array<AnalogIn> 	ai;
 	Array<DigitalIn> 	di;

@@ -47,7 +47,16 @@ NIDAQThread::~NIDAQThread()
 
 void NIDAQThread::openConnection()
 {
-	mNIDAQ = new NIDAQmx();
+
+	dm = new NIDAQmxDeviceManager();
+
+	dm->scanForDevices();
+
+	/* TODO: Prompt user which device to select: */
+	/* For now we default to first detected device */
+	mNIDAQ = new NIDAQmx(dm->devices[0].toUTF8());
+	
+	printf("Created new device: %s", mNIDAQ->deviceName);
 }
 
 void NIDAQThread::closeConnection()

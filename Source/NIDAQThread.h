@@ -158,6 +158,9 @@ private:
 
 	NIDAQAPI api;
 
+	//TODO: implement this as a singleton 
+	ScopedPointer<NIDAQmxDeviceManager> dm; 
+
 	ScopedPointer<NIDAQmx> mNIDAQ;
 
 	bool inputAvailable;
