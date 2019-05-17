@@ -76,7 +76,7 @@ struct VRange {
 	VRange(NIDAQ::float64 rmin, NIDAQ::float64 rmax) : vmin(rmin), vmax(rmax) {}
 };
 
-class NIDAQmx : public NIDAQComponent
+class NIDAQmx : public NIDAQComponent, public Thread
 {
 public:
 	NIDAQmx(const char* deviceName);
@@ -109,6 +109,11 @@ private:
 	Array<VRange> aiVRanges;
 	Array<VRange> diVRanges;
 
+	VRange voltageRange;
+
+	int voltageRangeIndex;
+	int sampleRateIndex;
+
 	float samplerate;
 	float bitVolts;
 	Array<int> sampleRates;
@@ -125,6 +130,8 @@ public:
 
 	void setSampleRate(int rateIndex);
 	int getSampleRate();
+
+	void setEnabled(bool);
 
 	void startAcquisition();
 	void stopAcquisition();

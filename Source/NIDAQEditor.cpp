@@ -158,14 +158,9 @@ void FifoMonitor::paint(Graphics& g)
 	g.fillRoundedRectangle(2, this->getHeight() - 2 - barHeight, this->getWidth() - 4, barHeight, 2);
 }
 
-AIButton::AIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), status(0), selected(false)
+AIButton::AIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(true)
 {
-	connected = false;
-
-	setRadioGroupId(979);
-
 	startTimer(500);
-
 }
 
 void AIButton::setId(int id_)
@@ -178,66 +173,35 @@ int AIButton::getId()
 	return id;
 }
 
-void AIButton::setSelectedState(bool state)
+void AIButton::setEnabled(bool enable)
 {
-	selected = state;
+	enabled = enable;
+	thread->ai[id].setEnabled(enabled);
 }
 
 void AIButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 {
-	if (isMouseOver && connected)
+	if (isMouseOver && enabled)
 		g.setColour(Colours::antiquewhite);
 	else
 		g.setColour(Colours::darkgrey);
 	g.fillEllipse(0, 0, 15, 15);
 
-	///g.setGradientFill(ColourGradient(Colours::lightcyan, 0, 0, Colours::lightskyblue, 10,10, true));
-
-	if (status == 1)
+	if (enabled)
 	{
-		if (selected)
-		{
-			if (isMouseOver)
-				g.setColour(Colours::lightgreen);
-			else
-				g.setColour(Colours::lightgreen);
-		}
-		else {
-			if (isMouseOver)
-				g.setColour(Colours::green);
-			else
-				g.setColour(Colours::green);
-		}
+		if (isMouseOver)
+			g.setColour(Colours::lightgreen);
+		else
+			g.setColour(Colours::forestgreen);
 	}
-	else if (status == 2)
+	else
 	{
-		if (selected)
-		{
-			if (isMouseOver)
-				g.setColour(Colours::lightsalmon);
-			else
-				g.setColour(Colours::lightsalmon);
-		}
-		else {
-			if (isMouseOver)
-				g.setColour(Colours::orange);
-			else
-				g.setColour(Colours::orange);
-		}
+		if (isMouseOver)
+			g.setColour(Colours::lightgrey);
+		else
+			g.setColour(Colours::lightgrey);
 	}
-	else {
-		g.setColour(Colours::lightgrey);
-	}
-
-	g.fillEllipse(2, 2, 11, 11);
-}
-
-void AIButton::setInputStatus(int status_)
-{
-	status = status_;
-
-	repaint();
-
+	g.fillEllipse(3, 3, 9, 9);
 }
 
 void AIButton::timerCallback()
@@ -245,14 +209,9 @@ void AIButton::timerCallback()
 
 }
 
-DIButton::DIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), status(0), selected(false)
+DIButton::DIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(true)
 {
-	connected = false;
-
-	setRadioGroupId(979);
-
 	startTimer(500);
-
 }
 
 void DIButton::setId(int id_)
@@ -265,67 +224,38 @@ int DIButton::getId()
 	return id;
 }
 
-void DIButton::setSelectedState(bool state)
+void DIButton::setEnabled(bool enable)
 {
-	selected = state;
+	enabled = enable;
+	thread->ai[id].setEnabled(enabled);
 }
 
 void DIButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 {
-	if (isMouseOver && connected)
+
+	if (isMouseOver && enabled)
 		g.setColour(Colours::antiquewhite);
 	else
 		g.setColour(Colours::darkgrey);
-	g.fillRoundedRectangle(0, 0, 15, 15, 4);
+	g.fillRoundedRectangle(0, 0, 15, 15, 2);
 
-	///g.setGradientFill(ColourGradient(Colours::lightcyan, 0, 0, Colours::lightskyblue, 10,10, true));
-
-	if (status == 1)
+	if (enabled)
 	{
-		if (selected)
-		{
-			if (isMouseOver)
-				g.setColour(Colours::lightgreen);
-			else
-				g.setColour(Colours::lightgreen);
-		}
-		else {
-			if (isMouseOver)
-				g.setColour(Colours::green);
-			else
-				g.setColour(Colours::green);
-		}
-	}
-	else if (status == 2)
+		if (isMouseOver)
+			g.setColour(Colours::lightgreen);
+		else
+			g.setColour(Colours::forestgreen);
+	} 
+	else 
 	{
-		if (selected)
-		{
-			if (isMouseOver)
-				g.setColour(Colours::lightsalmon);
-			else
-				g.setColour(Colours::lightsalmon);
-		}
-		else {
-			if (isMouseOver)
-				g.setColour(Colours::orange);
-			else
-				g.setColour(Colours::orange);
-		}
+		if (isMouseOver)
+			g.setColour(Colours::lightgrey);
+		else
+			g.setColour(Colours::lightgrey);
 	}
-	else {
-		g.setColour(Colours::lightgrey);
-	}
-
-	g.fillRoundedRectangle(2, 2, 11, 11, 3);
+	g.fillRoundedRectangle(3, 3, 9, 9, 2);
 }
 
-void DIButton::setInputStatus(int status_)
-{
-	status = status_;
-
-	repaint();
-
-}
 
 void DIButton::timerCallback()
 {
@@ -357,16 +287,13 @@ void BackgroundLoader::run()
 
 
 NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useDefaultParameterEditors)
-	: GenericEditor(parentNode, useDefaultParameterEditors)
+	: GenericEditor(parentNode, useDefaultParameterEditors), thread(t)
 {
 
 	thread = t;
 
-	//int nAI = t->getNumAnalogInputs();
-	//int nDI = t->getNumDigitalInputs();
-
-	int nAI = 8;
-	int nDI = 10;
+	int nAI = t->getNumAnalogInputs();
+	int nDI = t->getNumDigitalInputs();
 
 	int maxChannelsPerColumn = 4;
 	int aiChannelsPerColumn = nAI > 0 && nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;
@@ -418,7 +345,7 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	{
 		sampleRateSelectBox->addItem(sampleRates[i], i + 1);
 	}
-	sampleRateSelectBox->setSelectedItemIndex(0, false);
+	sampleRateSelectBox->setSelectedItemIndex(t->getSampleRateIndex(), false);
 	sampleRateSelectBox->addListener(this);
 	addAndMakeVisible(sampleRateSelectBox);
 
@@ -429,7 +356,7 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	{
 		voltageRangeSelectBox->addItem(voltageRanges[i], i + 1);
 	}
-	voltageRangeSelectBox->setSelectedItemIndex(0, false);
+	voltageRangeSelectBox->setSelectedItemIndex(t->getVoltageRangeIndex(), false);
 	voltageRangeSelectBox->addListener(this);
 	addAndMakeVisible(voltageRangeSelectBox);
 	
@@ -462,29 +389,31 @@ void NIDAQEditor::comboBoxChanged(ComboBox* comboBox)
 
 	if (comboBox == sampleRateSelectBox)
 	{
-		//TODO:
+		thread->setSampleRate(comboBox->getSelectedId() - 1);
+		std::cout << "Setting sample rate to index " << comboBox->getSelectedId() - 1 << "\n";
+		CoreServices::updateSignalChain(this);
 	}
-}
+	else // (comboBox == voltageRangeSelectBox)
+	{
+		thread->setVoltageRange(comboBox->getSelectedId() - 1);
+		std::cout << "Setting voltage range to index " << comboBox->getSelectedId() - 1 << "\n";
+		CoreServices::updateSignalChain(this);
+	}
+
+} 
 
 void NIDAQEditor::buttonEvent(Button* button)
 {
 
 	if (aiButtons.contains((AIButton*)button))
 	{
-		for (auto button : aiButtons)
-		{
-			button->setSelectedState(false);
-		}
-		AIButton* button = (AIButton*)button;
-		button->setSelectedState(true);
-		//thread->setSelectedProbe(probe->slot, probe->port);
-
+		((AIButton*)button)->setEnabled(!((AIButton*)button)->enabled);
 		repaint();
 	}
-
-	if (!acquisitionIsActive)
+	else if (diButtons.contains((DIButton*)button))
 	{
-
+		((DIButton*)button)->setEnabled(!((DIButton*)button)->enabled);
+		repaint();
 	}
 }
 

@@ -57,8 +57,9 @@ void NIDAQmxDeviceManager::scanForDevices()
 
 }
 
-NIDAQmx::NIDAQmx(const char* deviceName) : deviceName(deviceName)
+NIDAQmx::NIDAQmx(const char* deviceName) : Thread(String(0)), deviceName(deviceName)
 {
+
 	connect();
 	getAIChannels();
 	getAIVoltageRanges();
@@ -75,7 +76,12 @@ NIDAQmx::NIDAQmx(const char* deviceName) : deviceName(deviceName)
 	{
 		sampleRates.add(1000 * rate);
 	}
-	samplerate = 30000;
+
+	sampleRateIndex = sampleRates.size()-1; //30000
+	samplerate = sampleRates[sampleRateIndex];
+
+	voltageRangeIndex = aiVRanges.size() - 1; //-10/10
+	voltageRange = aiVRanges[voltageRangeIndex];
 
 	run();
 }
@@ -186,8 +192,8 @@ void NIDAQmx::run()
 	for (int i = 0; i < ai.size(); i++) {
 
 		printf("Channel: %s\n", STR2CHR(ai[i].id));
-		printf("Vmin: %f\n", ai[i].voltageRange.vmin);
-		printf("Vmax: %f\n", ai[i].voltageRange.vmax);
+		printf("Vmin: %f\n", voltageRange.vmin);
+		printf("Vmax: %f\n", voltageRange.vmax);
 		printf("Sample rate: %f\n", samplerate);
 		printf("Samples per channel %d\n", numberOfSamplesPerChannel);
 
@@ -198,8 +204,8 @@ void NIDAQmx::run()
 			STR2CHR(ai[i].id),			// physical channel name
 			STR2CHR(String("Channel")+String(i)),					// channel name
 			DAQmx_Val_Cfg_Default,		// terminal configuration
-			ai[i].voltageRange.vmin,						// channel max and min
-			ai[i].voltageRange.vmax,
+			voltageRange.vmin,			// channel max and min
+			voltageRange.vmax,
 			DAQmx_Val_Volts,
 			NULL);
 
@@ -209,7 +215,7 @@ void NIDAQmx::run()
 	/* Configure sampling rate */
 	error = NIDAQ::DAQmxCfgSampClkTiming(
 		taskHandle, "",
-		1000,
+		samplerate,
 		DAQmx_Val_Rising,
 		DAQmx_Val_FiniteSamps,
 		numberOfSamplesPerChannel);
@@ -234,6 +240,7 @@ void NIDAQmx::run()
 
 	printf("Acquired %d points \n", numSamplesRead);
 
+	/*
 	for (NIDAQ::uInt32 i = 0; i < ai.size(); i++) {
 		printf("%s Data: ", String("Channel") + String(i));
 		for (NIDAQ::uInt32 j = 0; j<numberOfSamplesPerChannel; j++){
@@ -242,6 +249,7 @@ void NIDAQmx::run()
 		}
 		printf("\n");
 	}
+	*/
 
 	NIDAQ::DAQmxStopTask(taskHandle);
 	NIDAQ::DAQmxClearTask(taskHandle);
@@ -259,7 +267,11 @@ InputChannel::InputChannel(String id) : id(id), enabled(true)
 
 InputChannel::~InputChannel()
 {
+}
 
+void InputChannel::setEnabled(bool enable)
+{
+	enabled = enable;
 }
 
 AnalogIn::AnalogIn()

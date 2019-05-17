@@ -90,6 +90,9 @@ public:
 	Array<String> getVoltageRanges();
 	Array<String> getSampleRates();
 
+	int getVoltageRangeIndex();
+	int getSampleRateIndex();
+
 	/** Returns the number of virtual subprocessors this source can generate */
 	unsigned int getNumSubProcessors() const override;
 
@@ -98,6 +101,12 @@ public:
 
 	/** Returns the number of TTL channels that each subprocessor generates*/
 	int getNumTTLOutputs(int subProcessorIdx) const override;
+
+	/** Sets the voltage range of the data source. */
+	void setVoltageRange(int rangeIndex);
+
+	/** Sets the sample rate of the data source. */
+	void setSampleRate(int rateIndex);
 
 	/** Returns the sample rate of the data source.*/
 	float getSampleRate(int subProcessorIdx) const override;
@@ -151,6 +160,9 @@ public:
 
 	ScopedPointer<ProgressBar> progressBar;
 	double initializationProgress;
+
+	friend class AIButton;
+	friend class DIButton;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NIDAQThread);
 

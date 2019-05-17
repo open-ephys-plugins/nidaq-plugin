@@ -55,6 +55,9 @@ void NIDAQThread::openConnection()
 	/* TODO: Prompt user which device to select: */
 	/* For now we default to first detected device */
 	mNIDAQ = new NIDAQmx(dm->devices[0].toUTF8());
+
+	setSampleRate(mNIDAQ->sampleRates.size() - 1);
+
 	
 	printf("Created new device: %s", mNIDAQ->deviceName);
 }
@@ -73,14 +76,34 @@ int NIDAQThread::getNumDigitalInputs()
 	return mNIDAQ->di.size();
 }
 
+void NIDAQThread::setVoltageRange(int rangeIndex)
+{
+
+}
+
+int NIDAQThread::getVoltageRangeIndex()
+{
+	return mNIDAQ->voltageRangeIndex;
+}
+
 Array<String> NIDAQThread::getVoltageRanges()
 {
 	Array<String> voltageRanges;
 	for (VRange range : mNIDAQ->aiVRanges)
 	{
-		voltageRanges.add(String(range.vmin) + "-" + String(range.vmax));
+		voltageRanges.add(String(range.vmin) + "-" + String(range.vmax) + " V");
 	}
 	return voltageRanges;
+}
+
+void NIDAQThread::setSampleRate(int rateIndex)
+{
+	mNIDAQ->samplerate = mNIDAQ->sampleRates[rateIndex];
+}
+
+int NIDAQThread::getSampleRateIndex()
+{
+	return mNIDAQ->sampleRateIndex;
 }
 
 Array<String> NIDAQThread::getSampleRates()

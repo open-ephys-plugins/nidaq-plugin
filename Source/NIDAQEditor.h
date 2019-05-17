@@ -63,20 +63,19 @@ public:
 
 	void setId(int id);
 	int getId(); 
-	void setSelectedState(bool);
-
-	void setInputStatus(int status);
+	void setEnabled(bool);
 	void timerCallback();
 
-	bool connected;
 	NIDAQThread* thread;
+
+	friend class NIDAQEditor;
 
 private:
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
 	int id;
-	int status;
-	bool selected;
+	bool enabled;
+
 };
 
 class DIButton : public ToggleButton, public Timer
@@ -86,20 +85,19 @@ public:
 
 	void setId(int id);
 	int getId();
-	void setSelectedState(bool);
-
-	void setInputStatus(int status);
+	void setEnabled(bool);
 	void timerCallback();
 
-	bool connected;
 	NIDAQThread* thread;
+
+	friend class NIDAQEditor;
 
 private:
 	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
 
 	int id;
-	int status;
-	bool selected;
+	bool enabled;
+
 };
 
 class FifoMonitor : public Component, public Timer
