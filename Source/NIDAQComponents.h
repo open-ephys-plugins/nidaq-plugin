@@ -82,6 +82,10 @@ public:
 	NIDAQmx(const char* deviceName);
 	~NIDAQmx();
 
+	DataBuffer* aiBuffer;
+
+	int64 ai_timestamp;
+
 	void getInfo();
 
 	void connect();
@@ -93,6 +97,8 @@ public:
 	bool setSampleRate();
 
 	void run();
+
+	NIDAQ::int16 data[240];
 
 	friend class NIDAQThread;
 

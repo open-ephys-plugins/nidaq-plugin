@@ -84,8 +84,8 @@ public:
 	bool stopAcquisition() override;
 
 	// DataThread Methods
-	int getNumAnalogInputs();
-	int getNumDigitalInputs();
+	int getNumAnalogInputs() const;
+	int getNumDigitalInputs() const;
 
 	Array<String> getVoltageRanges();
 	Array<String> getSampleRates();
@@ -178,6 +178,8 @@ private:
 	bool inputAvailable;
 	Array<AnalogIn> ai;
 	Array<DigitalIn> di;
+
+	DataBuffer* aiData;
 
 	bool isRecording;
 

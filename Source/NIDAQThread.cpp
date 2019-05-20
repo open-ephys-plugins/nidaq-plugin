@@ -39,6 +39,12 @@ NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), recordingTimer(this)
 	progressBar = new ProgressBar(initializationProgress);
 
 	openConnection();
+
+	int totalChans = getNumAnalogInputs();
+	sourceBuffers.add(new DataBuffer(totalChans, 10000));
+
+	mNIDAQ->aiBuffer = sourceBuffers.getLast();
+	
 }
 
 NIDAQThread::~NIDAQThread()
@@ -66,12 +72,12 @@ void NIDAQThread::closeConnection()
 {
 }
 
-int NIDAQThread::getNumAnalogInputs()
+int NIDAQThread::getNumAnalogInputs() const
 {
 	return mNIDAQ->ai.size();
 }
 
-int NIDAQThread::getNumDigitalInputs()
+int NIDAQThread::getNumDigitalInputs() const
 {
 	return mNIDAQ->di.size();
 }
@@ -151,7 +157,9 @@ String NIDAQThread::getInfoString()
 bool NIDAQThread::startAcquisition()
 {
 	//TODO:
-    return false;
+	mNIDAQ->startThread();
+	startThread();
+    return true;
 }
 
 void NIDAQThread::timerCallback()
@@ -161,7 +169,7 @@ void NIDAQThread::timerCallback()
 
 void NIDAQThread::startRecording()
 {
-	//TODO:
+
 }
 
 void NIDAQThread::stopRecording()
@@ -173,7 +181,15 @@ void NIDAQThread::stopRecording()
 bool NIDAQThread::stopAcquisition()
 {
 	//TODO:
-    return false;
+	if (isThreadRunning())
+	{
+		signalThreadShouldExit();
+	}
+	if (mNIDAQ->isThreadRunning())
+	{
+		mNIDAQ->signalThreadShouldExit();
+	}
+    return true;
 }
 
 void NIDAQThread::setSelectedInput()
@@ -203,13 +219,20 @@ unsigned int NIDAQThread::getNumSubProcessors() const
 /** Returns the number of continuous headstage channels the data source can provide.*/
 int NIDAQThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int subProcessorIdx) const
 {
-	//TODO?
-	int numChans;
+	if (subProcessorIdx > 0) return 0;
 
-	if (type == DataChannel::DataChannelTypes::AUX_CHANNEL)
-		numChans = 1;
-	else
-		numChans = 0;
+	int numChans = 0;
+
+	if (type == DataChannel::ADC_CHANNEL)
+	{
+		numChans = getNumAnalogInputs();
+	}
+	/*
+	if (type == DataChannel::EVENT_CHANNEL)
+	{
+		numChans = getNumDigitalInputs();
+	}
+	*/
 
 	return numChans;
 }
@@ -269,8 +292,7 @@ float NIDAQThread::getFillPercentage(int id)
 
 bool NIDAQThread::updateBuffer()
 {
-	//TODO
-    return false;
+	return true;
 }
 
 
