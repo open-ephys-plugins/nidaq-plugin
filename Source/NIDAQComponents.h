@@ -73,7 +73,8 @@ private:
 struct VRange {
 	NIDAQ::float64 vmin, vmax;
 	VRange() : vmin(0), vmax(0) {}
-	VRange(NIDAQ::float64 rmin, NIDAQ::float64 rmax) : vmin(rmin), vmax(rmax) {}
+	VRange(NIDAQ::float64 rmin, NIDAQ::float64 rmax)
+		: vmin(rmin), vmax(rmax) {}
 };
 
 class NIDAQmx : public NIDAQComponent, public Thread
@@ -100,6 +101,10 @@ public:
 
 	NIDAQ::int16 data[240];
 
+	NIDAQ::int32 CVICALLBACK EveryNCallback(NIDAQ::TaskHandle taskHandle, NIDAQ::int32 everyNsamplesEventType, NIDAQ::uInt32 nSamples, void *callbackData);
+
+	NIDAQ::int32 CVICALLBACK DoneCallback(NIDAQ::TaskHandle taskHandle, NIDAQ::int32 status, void *callbackData);
+
 	friend class NIDAQThread;
 
 private:
@@ -122,7 +127,8 @@ private:
 
 	float samplerate;
 	float bitVolts;
-	Array<int> sampleRates;
+	Array<float> sampleRates;
+
 };
 
 /* Inputs */ 
