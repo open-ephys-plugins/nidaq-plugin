@@ -39,7 +39,6 @@ NIDAQ::int32 CVICALLBACK DoneCallbackWrapper(NIDAQ::TaskHandle taskHandle, NIDAQ
 	return this_->DoneCallback(taskHandle, status, callbackData);
 }
 
-
 NIDAQComponent::NIDAQComponent() : serial_number(0) {}
 NIDAQComponent::~NIDAQComponent() {}
 
@@ -199,26 +198,92 @@ void NIDAQmx::run()
 	*/
 
 	/* Member function callbacks
+	https://stackoverflow.com/questions/20847747/make-a-cvicallback-a-member-function-in-qt-creator?rq=1
 	*/
 
-	NIDAQ::int32 error = 0;
+	NIDAQ::int32	error = 0;
+	char			errBuff[ERR_BUFF_SIZE] = { '\0' };
+	static int		totalRead = 0;
+	NIDAQ::int32    read = 0;
+	//float           aiSamples[1000];
+
 	NIDAQ::TaskHandle taskHandle = 0;
-	char errBuff[ERR_BUFF_SIZE] = { '\0' };
 
 	DAQmxErrChk (NIDAQ::DAQmxCreateTask("", &taskHandle));
-	DAQmxErrChk (NIDAQ::DAQmxCreateAIVoltageChan(taskHandle, STR2CHR(ai[0].id), "", DAQmx_Val_Cfg_Default, -10, 10, DAQmx_Val_Volts, NULL));
+	for (int i = 0; i < 1; i++)
+		DAQmxErrChk (NIDAQ::DAQmxCreateAIVoltageChan(taskHandle, STR2CHR(ai[i].id), "", DAQmx_Val_Cfg_Default, -10, 10, DAQmx_Val_Volts, NULL));
 	DAQmxErrChk (NIDAQ::DAQmxCfgSampClkTiming(taskHandle, "", samplerate, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1000));
 
 	NIDAQ::uInt32 nSamples = 1000;
 	NIDAQ::uInt32 options = 0;
 
-	NIDAQ::DAQmxRegisterEveryNSamplesEvent(taskHandle, DAQmx_Val_Acquired_Into_Buffer, nSamples, options, EveryNCallbackWrapper, &data);
-	NIDAQ::DAQmxRegisterDoneEvent(taskHandle, 0, DoneCallbackWrapper, NULL);
+	//NIDAQ::DAQmxRegisterEveryNSamplesEvent(taskHandle, DAQmx_Val_Acquired_Into_Buffer, nSamples, options, EveryNCallbackWrapper, data);
+	//NIDAQ::DAQmxRegisterDoneEvent(taskHandle, 0, DoneCallbackWrapper, NULL);
 
 	DAQmxErrChk ( NIDAQ::DAQmxStartTask(taskHandle) );
 
 	printf("Acquiring samples continuously. Press Enter to interrupt\n");
-	getchar();
+	
+	while (!threadShouldExit())
+	{
+
+		NIDAQ::int32 numSampsPerChan = 1000;
+		NIDAQ::int32 arraySizeInSamps = 1000;
+		DAQmxErrChk(NIDAQ::DAQmxReadAnalogF64(taskHandle, numSampsPerChan, 10.0, DAQmx_Val_GroupByScanNumber, data, arraySizeInSamps, &read, NULL));
+		std::chrono::milliseconds last_time;
+		std::chrono::milliseconds t = std::chrono::duration_cast< std::chrono::milliseconds >(
+			std::chrono::system_clock::now().time_since_epoch());
+		long long t_ms = t.count()*std::chrono::milliseconds::period::num / std::chrono::milliseconds::period::den;
+		if (read>0) {
+			printf("Acquired %d samples. Total %d\r", (int)read, (int)(totalRead += read));
+			printf("Read @ %i\n", t_ms);
+			fflush(stdout);
+		}
+
+		/* 
+		//Check data 
+		for (int i = 0; i < 10; i++)
+		{
+			printf("%2.1f, ", data[i]);
+		}
+		printf("\n");
+		*/
+		
+		float aiSamples[8];
+		/*
+		for (int ii = 0; ii < 8000; ii++)
+		{
+			if (ii < 1000)
+				aiSamples[ii] = data[ii];
+			else
+				aiSamples[ii] = 0;
+		}
+		*/
+		ai_timestamp += 1;
+		eventCode = 0;
+		for (int i = 0; i < 1000; i++)
+		{
+			for (int j = 0; j < 8; j++)
+			{
+				if (j == 0)
+					aiSamples[j] = (float)data[i];
+				else
+					aiSamples[j] = 0;
+			}
+			aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &eventCode, 1);
+			
+		}
+		fflush(stdout);
+
+	}
+
+	/*********************************************/
+	// DAQmx Stop Code
+	/*********************************************/
+	NIDAQ::DAQmxStopTask(taskHandle);
+	NIDAQ::DAQmxClearTask(taskHandle);
+
+	return;
 
 Error:
 
@@ -244,30 +309,28 @@ NIDAQ::int32 CVICALLBACK NIDAQmx::EveryNCallback(NIDAQ::TaskHandle taskHandle, N
 	char			errBuff[ERR_BUFF_SIZE] = { '\0' };
 	static int		totalRead = 0;
 	NIDAQ::int32    read = 0;
-	NIDAQ::float64  data[1000];
+	//float           aiSamples[1000];
+
+	NIDAQ::float64 myData;
+	
+	//myData = callbackData;
 
 	/*********************************************/
 	// DAQmx Read Code
 	/*********************************************/
 	NIDAQ::int32 numSampsPerChan = 1000;
 	NIDAQ::int32 arraySizeInSamps = 1000;
-	DAQmxErrChk(NIDAQ::DAQmxReadAnalogF64(taskHandle, numSampsPerChan, 10.0, DAQmx_Val_GroupByScanNumber, data, arraySizeInSamps, &read, NULL));
+	DAQmxErrChk(NIDAQ::DAQmxReadAnalogF64(taskHandle, numSampsPerChan, 10.0, DAQmx_Val_GroupByScanNumber, this->data, arraySizeInSamps, &read, NULL));
+	std::chrono::milliseconds last_time;
+	std::chrono::milliseconds t = std::chrono::duration_cast< std::chrono::milliseconds >(
+		std::chrono::system_clock::now().time_since_epoch());
+	long long t_ms = t.count()*std::chrono::milliseconds::period::num / std::chrono::milliseconds::period::den;
 	if (read>0) {
 		printf("Acquired %d samples. Total %d\r", (int)read, (int)(totalRead += read));
-		std::chrono::milliseconds t = std::chrono::duration_cast< std::chrono::milliseconds >(
-			std::chrono::system_clock::now().time_since_epoch());
-		long long t_ms = t.count()*std::chrono::milliseconds::period::num / std::chrono::milliseconds::period::den;
 		printf("Read @ %i\n", t_ms);
-		/*
-		for (int i = 0; i < 10; i++)
-		{
-			printf("%i : %.4f\n", i, data[i]);
-		}
-		*/
 		fflush(stdout);
 	}
-
-
+	return 0;
 
 Error:
 	if (DAQmxFailed(error)) {

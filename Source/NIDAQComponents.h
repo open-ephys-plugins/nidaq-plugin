@@ -86,6 +86,7 @@ public:
 	DataBuffer* aiBuffer;
 
 	int64 ai_timestamp;
+	uint64 eventCode;
 
 	void getInfo();
 
@@ -99,7 +100,8 @@ public:
 
 	void run();
 
-	NIDAQ::int16 data[240];
+	NIDAQ::float64  data[8000];
+	bool dataUpdated; 
 
 	NIDAQ::int32 CVICALLBACK EveryNCallback(NIDAQ::TaskHandle taskHandle, NIDAQ::int32 everyNsamplesEventType, NIDAQ::uInt32 nSamples, void *callbackData);
 
