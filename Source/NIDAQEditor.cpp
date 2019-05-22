@@ -389,15 +389,29 @@ void NIDAQEditor::comboBoxChanged(ComboBox* comboBox)
 
 	if (comboBox == sampleRateSelectBox)
 	{
-		thread->setSampleRate(comboBox->getSelectedId() - 1);
-		std::cout << "Setting sample rate to index " << comboBox->getSelectedId() - 1 << "\n";
-		CoreServices::updateSignalChain(this);
+		if (!thread->isThreadRunning())
+		{
+			thread->setSampleRate(comboBox->getSelectedId() - 1);
+			std::cout << "Setting sample rate to index " << comboBox->getSelectedId() - 1 << "\n";
+			CoreServices::updateSignalChain(this);
+		}
+		else
+		{
+			comboBox->setSelectedItemIndex(thread->getSampleRateIndex());
+		}
 	}
 	else // (comboBox == voltageRangeSelectBox)
 	{
-		thread->setVoltageRange(comboBox->getSelectedId() - 1);
-		std::cout << "Setting voltage range to index " << comboBox->getSelectedId() - 1 << "\n";
-		CoreServices::updateSignalChain(this);
+		if (!thread->isThreadRunning())
+		{
+			thread->setVoltageRange(comboBox->getSelectedId() - 1);
+			std::cout << "Setting voltage range to index " << comboBox->getSelectedId() - 1 << "\n";
+			CoreServices::updateSignalChain(this);
+		}
+		else
+		{
+			comboBox->setSelectedItemIndex(thread->getVoltageRangeIndex());
+		}
 	}
 
 } 

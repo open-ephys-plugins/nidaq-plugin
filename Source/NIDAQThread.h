@@ -179,6 +179,9 @@ private:
 	Array<AnalogIn> ai;
 	Array<DigitalIn> di;
 
+	int sampleRateIndex;
+	int voltageRangeIndex;
+
 	DataBuffer* aiData;
 
 	bool isRecording;

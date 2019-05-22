@@ -96,16 +96,9 @@ public:
 	void getAIVoltageRanges();
 	void getDIChannels();
 
-	bool setSampleRate();
-
 	void run();
 
 	NIDAQ::float64  data[8000];
-	bool dataUpdated; 
-
-	NIDAQ::int32 CVICALLBACK EveryNCallback(NIDAQ::TaskHandle taskHandle, NIDAQ::int32 everyNsamplesEventType, NIDAQ::uInt32 nSamples, void *callbackData);
-
-	NIDAQ::int32 CVICALLBACK DoneCallback(NIDAQ::TaskHandle taskHandle, NIDAQ::int32 status, void *callbackData);
 
 	friend class NIDAQThread;
 
@@ -123,9 +116,6 @@ private:
 	Array<VRange> diVRanges;
 
 	VRange voltageRange;
-
-	int voltageRangeIndex;
-	int sampleRateIndex;
 
 	float samplerate;
 	float bitVolts;
@@ -176,6 +166,7 @@ public:
 	AnalogIn(String id);
 	~AnalogIn();
 
+	void setVoltageRange(VRange range);
 	void setSourceType();
 	SOURCE_TYPE getSourceType();
 

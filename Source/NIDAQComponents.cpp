@@ -25,19 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "NIDAQComponents.h"
 
+#define MAX_NUM_ANALOG_IN 8
+#define ANALOG_SAMPLES_PER_CHANNEL 1000
 #define ERR_BUFF_SIZE 2048
 #define STR2CHR( jString ) ((jString).toUTF8())
 #define DAQmxErrChk(functionCall) if( DAQmxFailed(error=(functionCall)) ) goto Error; else
-
-NIDAQ::int32 CVICALLBACK EveryNCallbackWrapper(NIDAQ::TaskHandle taskHandle, NIDAQ::int32 everyNsamplesEventType, NIDAQ::uInt32 nSamples, void *callbackData) {
-	NIDAQmx * this_ = reinterpret_cast<NIDAQmx*>(callbackData);
-	return this_->EveryNCallback(taskHandle, everyNsamplesEventType, nSamples, callbackData);
-}
-
-NIDAQ::int32 CVICALLBACK DoneCallbackWrapper(NIDAQ::TaskHandle taskHandle, NIDAQ::int32 status, void *callbackData) {
-	NIDAQmx * this_ = reinterpret_cast<NIDAQmx*>(callbackData);
-	return this_->DoneCallback(taskHandle, status, callbackData);
-}
 
 NIDAQComponent::NIDAQComponent() : serial_number(0) {}
 NIDAQComponent::~NIDAQComponent() {}
@@ -71,7 +63,7 @@ void NIDAQmxDeviceManager::scanForDevices()
 
 }
 
-NIDAQmx::NIDAQmx(const char* theDevice) : Thread(String(0)), deviceName(theDevice)
+NIDAQmx::NIDAQmx(const char* name) : Thread("NIDAQmx_Thread"), deviceName(name)
 {
 
 	connect();
@@ -91,12 +83,11 @@ NIDAQmx::NIDAQmx(const char* theDevice) : Thread(String(0)), deviceName(theDevic
 		sampleRates.add(1000.0f * rate);
 	}
 
-	//Default to 30000 kS/S at voltage range -10 - 10 V
-	sampleRateIndex = sampleRates.size()-1; //30000
-	samplerate = sampleRates[sampleRateIndex];
+	//Default to highest sample rate
+	samplerate = sampleRates[sampleRates.size() - 1];
 
-	voltageRangeIndex = aiVRanges.size() - 1; //-10/10
-	voltageRange = aiVRanges[voltageRangeIndex];
+	//Default to largest voltage range
+	voltageRange = aiVRanges[aiVRanges.size() - 1];
 
 }
 
@@ -172,7 +163,7 @@ void NIDAQmx::getDIChannels()
 
 	char data[2048];
 	NIDAQ::DAQmxGetDevTerminals(STR2CHR(deviceName), &data[0], sizeof(data));
-	std::cout << "Found PFI Channels: " << std::endl;
+	printf("Found PFI Channels: \n");
 
 	StringArray channel_list;
 	channel_list.addTokens(&data[0], ", ", "\"");
@@ -181,7 +172,6 @@ void NIDAQmx::getDIChannels()
 	{
 		StringArray channel_type;
 		channel_type.addTokens(channel_list[i], "/", "\"");
-		//printf("%s\n", channel_list[i]);
 		if (channel_list[i].contains("PFI"))
 		{
 			printf("%s\n", channel_list[i].substring(1).toUTF8());
@@ -205,30 +195,66 @@ void NIDAQmx::run()
 	char			errBuff[ERR_BUFF_SIZE] = { '\0' };
 	static int		totalRead = 0;
 	NIDAQ::int32    read = 0;
-	//float           aiSamples[1000];
 
 	NIDAQ::TaskHandle taskHandle = 0;
 
+	float current_samplerate = samplerate;
+
+	/* Create an analog input task */
 	DAQmxErrChk (NIDAQ::DAQmxCreateTask("", &taskHandle));
-	for (int i = 0; i < 1; i++)
-		DAQmxErrChk (NIDAQ::DAQmxCreateAIVoltageChan(taskHandle, STR2CHR(ai[i].id), "", DAQmx_Val_Cfg_Default, -10, 10, DAQmx_Val_Volts, NULL));
-	DAQmxErrChk (NIDAQ::DAQmxCfgSampClkTiming(taskHandle, "", samplerate, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1000));
 
-	NIDAQ::uInt32 nSamples = 1000;
-	NIDAQ::uInt32 options = 0;
+	/* Create a voltage channel for each analog input */
+	for (int i = 0; i < ai.size(); i++)
+		DAQmxErrChk (NIDAQ::DAQmxCreateAIVoltageChan(
+		taskHandle,					//task handle
+		STR2CHR(ai[i].id),			//NIDAQ physical channel name (e.g. dev1/ai1)
+		"",							//user-defined channel name (optional)
+		DAQmx_Val_Cfg_Default,		//input terminal configuration
+		voltageRange.vmin,			//min input voltage
+		voltageRange.vmax,			//max input voltage
+		DAQmx_Val_Volts,			//voltage units
+		NULL));
 
-	//NIDAQ::DAQmxRegisterEveryNSamplesEvent(taskHandle, DAQmx_Val_Acquired_Into_Buffer, nSamples, options, EveryNCallbackWrapper, data);
-	//NIDAQ::DAQmxRegisterDoneEvent(taskHandle, 0, DoneCallbackWrapper, NULL);
+	/* Configure sample clock timing */
+	DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
+		taskHandle,
+		NULL,												//source : NULL means use internal clock
+		samplerate,											//rate : samples per second per channel
+		DAQmx_Val_Rising,									//activeEdge : (DAQmc_Val_Rising || DAQmx_Val_Falling)
+		DAQmx_Val_ContSamps,								//sampleMode : (DAQmx_Val_FiniteSamps || DAQmx_Val_ContSamps || DAQmx_Val_HWTimedSinglePoint)
+		MAX_NUM_ANALOG_IN * ANALOG_SAMPLES_PER_CHANNEL));	//sampsPerChanToAcquire : 
+																//If sampleMode == DAQmx_Val_FiniteSamps : # of samples to acquire for each channel
+																//Elif sampleMode == DAQmx_Val_ContSamps : circular buffer size
 
-	DAQmxErrChk ( NIDAQ::DAQmxStartTask(taskHandle) );
+	const int numAnalogInputs = ai.size();
 
-	printf("Acquiring samples continuously. Press Enter to interrupt\n");
-	
 	while (!threadShouldExit())
 	{
 
+		// TODO: Handle sample rate updates while recording???
+		/*
+		if (samplerate != current_samplerate)
+		{
+
+			NIDAQ::DAQmxStopTask(taskHandle);
+
+			//Configure sample clock timing 
+			DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
+				taskHandle,
+				NULL,												//source : NULL means use internal clock
+				samplerate,											//rate : samples per second per channel
+				DAQmx_Val_Rising,									//activeEdge : (DAQmc_Val_Rising || DAQmx_Val_Falling)
+				DAQmx_Val_ContSamps,								//sampleMode : (DAQmx_Val_FiniteSamps || DAQmx_Val_ContSamps || DAQmx_Val_HWTimedSinglePoint)
+				MAX_NUM_ANALOG_IN * ANALOG_SAMPLES_PER_CHANNEL));	//sampsPerChanToAcquire : 
+																		//If sampleMode == DAQmx_Val_FiniteSamps : # of samples to acquire for each channel
+																		//Elif sampleMode == DAQmx_Val_ContSamps : circular buffer size
+		}
+		*/
+
+		float aiSamples[MAX_NUM_ANALOG_IN];
 		NIDAQ::int32 numSampsPerChan = 1000;
-		NIDAQ::int32 arraySizeInSamps = 1000;
+		NIDAQ::int32 arraySizeInSamps = ai.size() * numSampsPerChan;
+
 		DAQmxErrChk(NIDAQ::DAQmxReadAnalogF64(taskHandle, numSampsPerChan, 10.0, DAQmx_Val_GroupByScanNumber, data, arraySizeInSamps, &read, NULL));
 		std::chrono::milliseconds last_time;
 		std::chrono::milliseconds t = std::chrono::duration_cast< std::chrono::milliseconds >(
@@ -240,39 +266,19 @@ void NIDAQmx::run()
 			fflush(stdout);
 		}
 
-		/* 
-		//Check data 
-		for (int i = 0; i < 10; i++)
-		{
-			printf("%2.1f, ", data[i]);
-		}
-		printf("\n");
-		*/
-		
-		float aiSamples[8];
-		/*
-		for (int ii = 0; ii < 8000; ii++)
-		{
-			if (ii < 1000)
-				aiSamples[ii] = data[ii];
-			else
-				aiSamples[ii] = 0;
-		}
-		*/
-		ai_timestamp += 1;
 		eventCode = 0;
-		for (int i = 0; i < 1000; i++)
+		for (int i = 0; i < arraySizeInSamps; i++)
 		{
-			for (int j = 0; j < 8; j++)
+			aiSamples[i % MAX_NUM_ANALOG_IN] = data[i];
+
+			if (i % MAX_NUM_ANALOG_IN == 0)
 			{
-				if (j == 0)
-					aiSamples[j] = (float)data[i];
-				else
-					aiSamples[j] = 0;
+				ai_timestamp += 1;
+				aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &eventCode, 1);
 			}
-			aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &eventCode, 1);
 			
 		}
+
 		fflush(stdout);
 
 	}
@@ -303,65 +309,6 @@ Error:
 
 }
 
-NIDAQ::int32 CVICALLBACK NIDAQmx::EveryNCallback(NIDAQ::TaskHandle taskHandle, NIDAQ::int32 everyNsamplesEventType, NIDAQ::uInt32 nSamples, void *callbackData)
-{
-	NIDAQ::int32	error = 0;
-	char			errBuff[ERR_BUFF_SIZE] = { '\0' };
-	static int		totalRead = 0;
-	NIDAQ::int32    read = 0;
-	//float           aiSamples[1000];
-
-	NIDAQ::float64 myData;
-	
-	//myData = callbackData;
-
-	/*********************************************/
-	// DAQmx Read Code
-	/*********************************************/
-	NIDAQ::int32 numSampsPerChan = 1000;
-	NIDAQ::int32 arraySizeInSamps = 1000;
-	DAQmxErrChk(NIDAQ::DAQmxReadAnalogF64(taskHandle, numSampsPerChan, 10.0, DAQmx_Val_GroupByScanNumber, this->data, arraySizeInSamps, &read, NULL));
-	std::chrono::milliseconds last_time;
-	std::chrono::milliseconds t = std::chrono::duration_cast< std::chrono::milliseconds >(
-		std::chrono::system_clock::now().time_since_epoch());
-	long long t_ms = t.count()*std::chrono::milliseconds::period::num / std::chrono::milliseconds::period::den;
-	if (read>0) {
-		printf("Acquired %d samples. Total %d\r", (int)read, (int)(totalRead += read));
-		printf("Read @ %i\n", t_ms);
-		fflush(stdout);
-	}
-	return 0;
-
-Error:
-	if (DAQmxFailed(error)) {
-		NIDAQ::DAQmxGetExtendedErrorInfo(errBuff, ERR_BUFF_SIZE);
-		/*********************************************/
-		// DAQmx Stop Code
-		/*********************************************/
-		NIDAQ::DAQmxStopTask(taskHandle);
-		NIDAQ::DAQmxClearTask(taskHandle);
-		printf("DAQmx Error: %s\n", errBuff);
-	}
-	return 0;
-}
-
-NIDAQ::int32 CVICALLBACK NIDAQmx::DoneCallback(NIDAQ::TaskHandle taskHandle, NIDAQ::int32 status, void *callbackData)
-{
-	int32   error = 0;
-	char    errBuff[ERR_BUFF_SIZE] = { '\0' };
-
-	// Check to see if an error stopped the task.
-	DAQmxErrChk(status);
-
-Error:
-	if (DAQmxFailed(error)) {
-		NIDAQ::DAQmxGetExtendedErrorInfo(errBuff, ERR_BUFF_SIZE);
-		NIDAQ::DAQmxClearTask(taskHandle);
-		printf("DAQmx Error: %s\n", errBuff);
-	}
-	return 0;
-}
-
 InputChannel::InputChannel()
 {
 
@@ -386,7 +333,12 @@ AnalogIn::AnalogIn()
 
 AnalogIn::AnalogIn(String id) : InputChannel(id)
 {
-	voltageRange = VRange(-1.25, 1.25);
+	voltageRange = VRange(-10.0, 10.0);
+}
+
+void AnalogIn::setVoltageRange(VRange range)
+{
+	voltageRange = range;
 }
 
 

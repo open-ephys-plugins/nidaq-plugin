@@ -44,6 +44,10 @@ NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), recordingTimer(this)
 	sourceBuffers.add(new DataBuffer(totalChans, 10000));
 
 	mNIDAQ->aiBuffer = sourceBuffers.getLast();
+
+	//Default to highest sample rate, largest voltage range
+	sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+	voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
 	
 }
 
@@ -64,6 +68,7 @@ void NIDAQThread::openConnection()
 
 	setSampleRate(mNIDAQ->sampleRates.size() - 1);
 
+	inputAvailable = true;
 	
 	printf("Created new device: %s", mNIDAQ->deviceName);
 }
@@ -84,12 +89,29 @@ int NIDAQThread::getNumDigitalInputs() const
 
 void NIDAQThread::setVoltageRange(int rangeIndex)
 {
+	/* Doesnt work like I think it does...why??? */
+	voltageRangeIndex = rangeIndex;
+	for (auto input : mNIDAQ->ai)
+	{
+		input.setVoltageRange(mNIDAQ->aiVRanges[rangeIndex]);
+	}
+	mNIDAQ->voltageRange = mNIDAQ->aiVRanges[rangeIndex];
+}
 
+void NIDAQThread::setSampleRate(int rateIndex)
+{
+	sampleRateIndex = rateIndex;
+	mNIDAQ->samplerate = mNIDAQ->sampleRates[rateIndex];
 }
 
 int NIDAQThread::getVoltageRangeIndex()
 {
-	return mNIDAQ->voltageRangeIndex;
+	return voltageRangeIndex;
+}
+
+int NIDAQThread::getSampleRateIndex()
+{
+	return sampleRateIndex;
 }
 
 Array<String> NIDAQThread::getVoltageRanges()
@@ -100,16 +122,6 @@ Array<String> NIDAQThread::getVoltageRanges()
 		voltageRanges.add(String(range.vmin) + "-" + String(range.vmax) + " V");
 	}
 	return voltageRanges;
-}
-
-void NIDAQThread::setSampleRate(int rateIndex)
-{
-	mNIDAQ->samplerate = mNIDAQ->sampleRates[rateIndex];
-}
-
-int NIDAQThread::getSampleRateIndex()
-{
-	return mNIDAQ->sampleRateIndex;
 }
 
 Array<String> NIDAQThread::getSampleRates()
@@ -140,7 +152,6 @@ XmlElement NIDAQThread::getInfoXml()
 	return nidaq_info;
 
 }
-
 
 String NIDAQThread::getInfoString()
 {
@@ -197,7 +208,6 @@ void NIDAQThread::setSelectedInput()
 
 }
 
-
 void NIDAQThread::setDefaultChannelNames()
 {
 	//TODO:
@@ -207,7 +217,6 @@ bool NIDAQThread::usesCustomNames() const
 {
 	return false;
 }
-
 
 /** Returns the number of virtual subprocessors this source can generate */
 unsigned int NIDAQThread::getNumSubProcessors() const
@@ -247,7 +256,6 @@ int NIDAQThread::getNumTTLOutputs(int subProcessorIdx) const
 /** Returns the sample rate of the data source.*/
 float NIDAQThread::getSampleRate(int subProcessorIdx) const
 {
-	//TODO
 	return mNIDAQ->samplerate;
 }
 
@@ -294,7 +302,6 @@ bool NIDAQThread::updateBuffer()
 {
 	return true;
 }
-
 
 RecordingTimer::RecordingTimer(NIDAQThread* t_)
 {
