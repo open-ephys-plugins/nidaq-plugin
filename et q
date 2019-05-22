@@ -1,0 +1,338 @@
+[33mcommit 21dcbcd540ab4eb161e7a0d02da6167e3c34f26a[m[33m ([m[1;36mHEAD -> [m[1;32mfeat/add-digital-lines[m[33m)[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 22 15:26:59 2019 -0700
+
+    Add analog channel enable toggle
+
+[33mcommit 738e1ff3e4058ef1ab39668b1f4664b29e2787e4[m[33m ([m[1;32mmaster[m[33m, [m[1;32mfeat/channel-toggle[m[33m)[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 22 15:26:59 2019 -0700
+
+    Add analog channel enable toggle
+
+[33mcommit 865d7ebd1b634a301021bb92edaac52af417ef54[m[33m ([m[1;31morigin/master[m[33m)[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 22 15:10:08 2019 -0700
+
+    Enable change analog voltage apply to all channels; single not yet supported
+
+[33mcommit 8a3338990389b180f40554da8a69f7a7567e0e97[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 22 14:36:16 2019 -0700
+
+    Connect sample rate selection for analog channels
+
+[33mcommit 68e984d9d0c862efc2236f67641f3b57ae6a1a33[m[33m ([m[1;32mfeat/background-loading[m[33m)[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 22 11:36:29 2019 -0700
+
+    Add all analog input channels to data buffer
+
+[33mcommit 4626ae81aec0080cea326a534a9083eccc7067f3[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 20 17:40:11 2019 -0700
+
+    Add single channel acquisition on run() with proper timing
+
+[33mcommit 1229478dcd92df470b8e71018613b31c640d7512[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 20 17:40:11 2019 -0700
+
+    Add single channel acquisition on run() with proper timing
+
+[33mcommit 7208537417ab07b385654b02f8407ca3d00d16aa[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 20 17:40:11 2019 -0700
+
+    Add single channel acquisition on run() with proper timing
+
+[33mcommit 281b623a47f0a737433ef7d9b1f7392afef1e1f1[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 20 17:40:11 2019 -0700
+
+    WIP: Use callbackData to update buffers
+
+[33mcommit 41ee94d66b891d00b2d0710eeb6190dc333ab33c[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 20 15:53:41 2019 -0700
+
+    Add member function wrappers for NIDAQmx callbacks
+
+[33mcommit 6bd19c23d67838bdaf789fd3bfb7b0d81203f3c3[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 20 13:08:30 2019 -0700
+
+    Add continous analog input stream for one channel
+
+[33mcommit 19f61c001240376691e5a44a95066403dbef9fec[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 20 13:05:45 2019 -0700
+
+    Add continous analog data stream for one AI channel
+
+[33mcommit 4eb43c2658a38396a9b5b268b2f8f4c872bd55a4[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Fri May 17 13:33:43 2019 -0700
+
+    Dummy analog data streaming correctly to LFP
+
+[33mcommit 3b5679915b7347bccf3d07b2634dad0c9c00a0dc[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Fri May 17 13:33:43 2019 -0700
+
+    WIP: Integrate continous analog example
+
+[33mcommit 01418b5c7516e5d9a597447fdfd375e69d114011[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Fri May 17 13:33:43 2019 -0700
+
+    WIP: Add continous analog example
+
+[33mcommit 07999ea530fd1d64fe612a53bbb4a65e7b21df93[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Fri May 17 12:39:44 2019 -0700
+
+    Generate dummy stream
+
+[33mcommit cb9c1dbb192e3db1ad5dbd0ba490880fc2899df3[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Thu May 16 17:29:03 2019 -0700
+
+    WIP: Add run data thread
+
+[33mcommit c1029e0974c649b58fec9e1247a597fbad14b4a2[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Thu May 16 17:13:29 2019 -0700
+
+    Add editor callbacks
+
+[33mcommit 36069e803127deab3977e87ee714b6ec8d9d2db8[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Thu May 16 14:10:50 2019 -0700
+
+    Read 1000 samples from all analog channels
+
+[33mcommit 41c305deac6468629c4f32bf7e28938bd5665ff4[m
+Merge: 96aa5e2 fe3b32a
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Thu May 16 09:42:15 2019 -0700
+
+    Merge branch 'feat/analog-acquire'
+
+[33mcommit 96aa5e29aa3e58873db86960c1869c9a3b7c4ea7[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 15 16:41:56 2019 -0700
+
+    Get proper input channel names
+
+[33mcommit fe3b32a1de3e8839a1e4a3821512f0f91ccff528[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 15 16:41:56 2019 -0700
+
+    Get proper input channel names
+
+[33mcommit 3cfd8d1b5a01037a5e840f498ee3f5d37ab81989[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 15 16:41:56 2019 -0700
+
+    Get proper input channel names
+
+[33mcommit 2e0b9b7187682b895fae6bb63b2c97903782fabc[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 15 16:41:56 2019 -0700
+
+    Get proper input channel names
+
+[33mcommit 09f480f3eafb538fdb8f21ab781ce1a6ee360aec[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 15 16:14:42 2019 -0700
+
+    Update device id types
+
+[33mcommit b4b9df718a7efb5238f02ac8af99157844c458ef[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 14 14:40:51 2019 -0700
+
+    Add analog/digital channel count and voltage range probing
+
+[33mcommit f4fd1b45a67a505b6cedf5d2ae4695b9a8b7801d[m
+Merge: e398d6d 440128d
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 15 10:12:29 2019 -0700
+
+    Merge branch 'master' of github.com:medengineer/ni-daq
+
+[33mcommit e398d6d70499f3d4ce2ed571095b22b20b1592d6[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 14 14:40:51 2019 -0700
+
+    Add analog/digital channel count and voltage range probing
+
+[33mcommit 440128d5b5c7c8fd0479673ae0ed8a5b78cb1ad7[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 14 14:40:51 2019 -0700
+
+    Add analog channel count and voltage range probing
+
+[33mcommit 24df81bfa29707723ff652c530f56406638bc53c[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 14 14:40:51 2019 -0700
+
+    Add analog channel count and voltage range probing
+
+[33mcommit 7c2a2151dc307e5cbff34b5bd83b9f770c351eb3[m
+Merge: 14e1ff5 58e1aa1
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 14 17:13:46 2019 -0700
+
+    Merge branch 'master' of github.com:medengineer/ni-daq
+
+[33mcommit 14e1ff5d8ab1550d465f9d04a36c77c87ac91315[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 14 14:40:51 2019 -0700
+
+    Add analog channel count and voltage range probing
+
+[33mcommit 58e1aa1e8c35ab5523a3cfb9d20cbaaf020b8981[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 14 14:40:51 2019 -0700
+
+    Add analog channel count and voltage range probing
+
+[33mcommit 0bcfa75142181fdc90e3974bb2e687e8e0961315[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 14 14:40:51 2019 -0700
+
+    Add analog channel count and voltage range probing
+
+[33mcommit 13ff6c668442ea2f81fefee29ebdaa992d96c12b[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 14 14:40:51 2019 -0700
+
+    Add analog channel count and voltage range probing
+
+[33mcommit 12877b30f0d68e7cbb43b8f4b1fd6e0ca527e7cb[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 13 17:15:31 2019 -0700
+
+    Add first successful NIDAQ API call
+
+[33mcommit 2a23ce9889df052a261ef43017873c2fca5a7a70[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 13 17:15:31 2019 -0700
+
+    Add first successful NIDAQ API call
+
+[33mcommit d7962e0cf16d0586b0ac90fb1bbb08d45a712adf[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Mon May 13 09:46:13 2019 -0700
+
+    Add NI-DAQ .lib files
+
+[33mcommit 8aaeff3d3cefd89999dbeba49630e924eef014df[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Fri May 10 17:18:42 2019 -0700
+
+    Add dynamic analog/digital ui loading
+
+[33mcommit 6d234f84afc32a055da0139c071213d1b9b5e074[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Fri May 10 17:18:42 2019 -0700
+
+    WIP: Works with 2AI + 2DI but not 10AI + 8DI ???
+
+[33mcommit 2b3049587d3366e32eb32253795890cb382b5f3d[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Fri May 10 17:18:42 2019 -0700
+
+    WIP: Works with 2AI + 2DI but not 10AI + 8DI ???
+
+[33mcommit 9d473a31e99cd58b4d585fc78f565d93762d8e48[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Fri May 10 17:02:43 2019 -0700
+
+    Add digital inputs to editor
+
+[33mcommit ec9d519cc29df7904efce0faf2d103d5aaa347b6[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Fri May 10 14:54:33 2019 -0700
+
+    Update source node properties
+
+[33mcommit 480f838718475c96248ee43d06cededc898cce8c[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Thu May 9 17:09:10 2019 -0700
+
+    Add analog inputs, sample rate, fifo to editor
+
+[33mcommit 39bb3a484807dbc679ba4ed43ef64e1d77cf9ad0[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 16:50:28 2019 -0700
+
+    First plugin drop success!
+
+[33mcommit 6a69cf05555ee2b19d66c8d474f67c7a56256c4e[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 16:50:28 2019 -0700
+
+    WIP: Working on NIDAQComponents.cpp
+
+[33mcommit 4219d5f6cb9f905e1d9910366da1561824d0d457[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Wed May 8 17:10:36 2019 -0700
+
+    WIP: Working on NIDAQComponents.cpp
+
+[33mcommit 2c40a36a627be60c830a1e566a69a02d6d3f7aea[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 16:50:28 2019 -0700
+
+    WIP: Building ni-daq editor based off Arduino Output plugin
+
+[33mcommit e19b959190225614828e192c0b389a590646a4c1[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 16:19:14 2019 -0700
+
+    Update .gitignore
+
+[33mcommit efe9061ebdc2521253ac4fb4e03377bc1a447236[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 16:13:04 2019 -0700
+
+    Add .sh script to generate VS2013 build files
+
+[33mcommit aa6b0e39fd5564ee9658b0b0156280df813b89fb[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 15:22:53 2019 -0700
+
+    First build success!
+
+[33mcommit 4ff20c131d62bb86ba63c954bb193c13eebed705[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 14:46:28 2019 -0700
+
+    Add .gitignore
+
+[33mcommit 634208f10cd85f20ee64fb73d75d3c22c44aa9d1[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 14:41:54 2019 -0700
+
+    First build success!
+
+[33mcommit 33d6f91400cd1947323f0fc9572ebd5c76df9d03[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 12:01:02 2019 -0700
+
+    Add Builds dir
+
+[33mcommit 6c9bf6654a9dff564a0bd7fe53d1a6e076fcfec5[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 11:59:29 2019 -0700
+
+    Add NIDAQ-api
+
+[33mcommit 55bd289d453273319935f8081f0347f1300d9e2b[m
+Author: Pavel Kulik <pavel.kulik@alleninstitute.org>
+Date:   Tue May 7 11:51:46 2019 -0700
+
+    first commit

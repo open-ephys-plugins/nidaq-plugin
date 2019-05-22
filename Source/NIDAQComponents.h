@@ -98,7 +98,8 @@ public:
 
 	void run();
 
-	NIDAQ::float64  data[8000];
+	NIDAQ::float64  ai_data[8000];
+	NIDAQ::uInt8    di_data[1000];
 
 	friend class NIDAQThread;
 
@@ -182,6 +183,7 @@ class DigitalIn : public InputChannel
 {
 public:
 	DigitalIn(String id);
+	DigitalIn();
 	~DigitalIn();
 private:
 };

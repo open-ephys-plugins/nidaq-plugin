@@ -255,7 +255,7 @@ int NIDAQThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int subPr
 int NIDAQThread::getNumTTLOutputs(int subProcessorIdx) const
 {
 	//TODO
-	return 0;
+	return 1;
 }
 
 /** Returns the sample rate of the data source.*/
