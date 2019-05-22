@@ -87,6 +87,11 @@ int NIDAQThread::getNumDigitalInputs() const
 	return mNIDAQ->di.size();
 }
 
+void NIDAQThread::toggleAIChannel(int index)
+{
+	mNIDAQ->aiChannelEnabled.set(index, !mNIDAQ->aiChannelEnabled[index]);
+}
+
 void NIDAQThread::setVoltageRange(int rangeIndex)
 {
 	/* Doesnt work like I think it does...why??? */

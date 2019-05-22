@@ -116,6 +116,7 @@ private:
 	Array<VRange> diVRanges;
 
 	VRange voltageRange;
+	Array<bool> aiChannelEnabled;
 
 	float samplerate;
 	float bitVolts;

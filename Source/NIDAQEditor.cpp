@@ -422,6 +422,7 @@ void NIDAQEditor::buttonEvent(Button* button)
 	if (aiButtons.contains((AIButton*)button))
 	{
 		((AIButton*)button)->setEnabled(!((AIButton*)button)->enabled);
+		thread->toggleAIChannel(((AIButton*)button)->getId());
 		repaint();
 	}
 	else if (diButtons.contains((DIButton*)button))

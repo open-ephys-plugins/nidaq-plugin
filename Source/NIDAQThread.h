@@ -93,6 +93,8 @@ public:
 	int getVoltageRangeIndex();
 	int getSampleRateIndex();
 
+	void toggleAIChannel(int channelIndex);
+
 	/** Returns the number of virtual subprocessors this source can generate */
 	unsigned int getNumSubProcessors() const override;
 

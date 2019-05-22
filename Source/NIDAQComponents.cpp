@@ -136,6 +136,7 @@ void NIDAQmx::getAIChannels()
 		{
 			printf("%s\n", channel_list[i].toUTF8());
 			ai.add(AnalogIn(channel_list[i].toUTF8()));
+			aiChannelEnabled.add(true);
 		}
 	}
 
@@ -197,8 +198,6 @@ void NIDAQmx::run()
 	NIDAQ::int32    read = 0;
 
 	NIDAQ::TaskHandle taskHandle = 0;
-
-	float current_samplerate = samplerate;
 
 	/* Create an analog input task */
 	DAQmxErrChk (NIDAQ::DAQmxCreateTask("", &taskHandle));
@@ -269,7 +268,10 @@ void NIDAQmx::run()
 		eventCode = 0;
 		for (int i = 0; i < arraySizeInSamps; i++)
 		{
-			aiSamples[i % MAX_NUM_ANALOG_IN] = data[i];
+			if (aiChannelEnabled[i % MAX_NUM_ANALOG_IN])
+				aiSamples[i % MAX_NUM_ANALOG_IN] = data[i];
+			else
+				aiSamples[0] = 0.0f;
 
 			if (i % MAX_NUM_ANALOG_IN == 0)
 			{
