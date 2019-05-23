@@ -120,7 +120,7 @@ private:
 	Array<bool> aiChannelEnabled;
 
 	float samplerate;
-	float bitVolts;
+	float adcResolution;
 	Array<float> sampleRates;
 
 };

@@ -31,6 +31,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define STR2CHR( jString ) ((jString).toUTF8())
 #define DAQmxErrChk(functionCall) if( DAQmxFailed(error=(functionCall)) ) goto Error; else
 
+static int32 GetTerminalNameWithDevPrefix(NIDAQ::TaskHandle taskHandle, const char terminalName[], char triggerName[]);
+
+static int32 GetTerminalNameWithDevPrefix(NIDAQ::TaskHandle taskHandle, const char terminalName[], char triggerName[])
+{
+
+	NIDAQ::int32	error = 0;
+	char			device[256];
+	NIDAQ::int32	productCategory;
+	NIDAQ::uInt32	numDevices, i = 1;
+
+	DAQmxErrChk(NIDAQ::DAQmxGetTaskNumDevices(taskHandle, &numDevices));
+	while (i <= numDevices) {
+		DAQmxErrChk(NIDAQ::DAQmxGetNthTaskDevice(taskHandle, i++, device, 256));
+		DAQmxErrChk(NIDAQ::DAQmxGetDevProductCategory(device, &productCategory));
+		if (productCategory != DAQmx_Val_CSeriesModule && productCategory != DAQmx_Val_SCXIModule) {
+			*triggerName++ = '/';
+			strcat(strcat(strcpy(triggerName, device), "/"), terminalName);
+			break;
+		}
+	}
+
+Error:
+	return error;
+}
+
 NIDAQComponent::NIDAQComponent() : serial_number(0) {}
 NIDAQComponent::~NIDAQComponent() {}
 
@@ -65,6 +90,8 @@ void NIDAQmxDeviceManager::scanForDevices()
 
 NIDAQmx::NIDAQmx(const char* name) : Thread("NIDAQmx_Thread"), deviceName(name)
 {
+
+	adcResolution = 14; //bits
 
 	connect();
 	getAIChannels();
@@ -184,17 +211,11 @@ void NIDAQmx::getDIChannels()
 
 void NIDAQmx::run()
 {
-
-	/* Read from USB
-	https://kb.mccdaq.com/KnowledgebaseArticle50717.aspx
-	*/
-
-	/* Member function callbacks
-	https://stackoverflow.com/questions/20847747/make-a-cvicallback-a-member-function-in-qt-creator?rq=1
-	*/
+	/* Derived from NIDAQmx: ANSI C Example program: ContAI-ReadDigChan.c */
 
 	NIDAQ::int32	error = 0;
 	char			errBuff[ERR_BUFF_SIZE] = { '\0' };
+	char			trigName[256];
 
 	/**************************************/
 	/********CONFIG ANALOG CHANNELS********/
@@ -222,7 +243,7 @@ void NIDAQmx::run()
 	/* Configure sample clock timing */
 	DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
 		taskHandleAI,
-		NULL,												//source : NULL means use internal clock
+		"",													//source : NULL means use internal clock
 		samplerate,											//rate : samples per second per channel
 		DAQmx_Val_Rising,									//activeEdge : (DAQmc_Val_Rising || DAQmx_Val_Falling)
 		DAQmx_Val_ContSamps,								//sampleMode : (DAQmx_Val_FiniteSamps || DAQmx_Val_ContSamps || DAQmx_Val_HWTimedSinglePoint)
@@ -230,9 +251,13 @@ void NIDAQmx::run()
 																//If sampleMode == DAQmx_Val_FiniteSamps : # of samples to acquire for each channel
 																//Elif sampleMode == DAQmx_Val_ContSamps : circular buffer size
 
-	/***************************************/
-	/********CONFIG DIGITAL CHANNELS********/
-	/***************************************/
+
+	/* Get handle to analog trigger to sync with digital inputs */
+	DAQmxErrChk(GetTerminalNameWithDevPrefix(taskHandleAI, "ai/SampleClock", trigName));
+
+	/************************************/
+	/********CONFIG DIGITAL LINES********/
+	/************************************/
 
 	NIDAQ::int32		di_read = 0;
 	static int			totalDIRead = 0;
@@ -245,13 +270,13 @@ void NIDAQmx::run()
 	/* Create a channel for each digital input */
 	DAQmxErrChk(NIDAQ::DAQmxCreateDIChan(
 		taskHandleDI,
-		"PXI1Slot4/port0/line0:7",
+		"PXI1Slot4/port0",
 		"",
 		DAQmx_Val_ChanForAllLines));
 
 	DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
 		taskHandleDI,							//task handle
-		"/PXI1Slot4/ai/SampleClock",			//source : NULL means use internal clock, we will sync to analog input clock
+		trigName,								//source : NULL means use internal clock, we will sync to analog input clock
 		samplerate,								//rate : samples per second per channel
 		DAQmx_Val_Rising,						//activeEdge : (DAQmc_Val_Rising || DAQmx_Val_Falling)
 		DAQmx_Val_ContSamps,					//sampleMode : (DAQmx_Val_FiniteSamps || DAQmx_Val_ContSamps || DAQmx_Val_HWTimedSinglePoint)
@@ -259,10 +284,14 @@ void NIDAQmx::run()
 													//If sampleMode == DAQmx_Val_FiniteSamps : # of samples to acquire for each channel
 													//Elif sampleMode == DAQmx_Val_ContSamps : circular buffer size
 
+	DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleDI));
+	DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleAI));
+
 	while (!threadShouldExit())
 	{
 
-		// TODO: Potentialy handle sample rate updates while recording???
+		// TODO: Potentialy handle sample rate/ voltage range updates while recording???
+		// Will have to send update to signal chain to make this work...
 		/*
 		if (samplerate != current_samplerate)
 		{
@@ -284,7 +313,7 @@ void NIDAQmx::run()
 
 		NIDAQ::int32 numSampsPerChan = 1000;
 		NIDAQ::int32 arraySizeInSamps = ai.size() * numSampsPerChan;
-		NIDAQ::float64 timeout = 10.0;
+		NIDAQ::float64 timeout = 5.0;
 
 		DAQmxErrChk(NIDAQ::DAQmxReadAnalogF64(
 			taskHandleAI,
@@ -319,7 +348,7 @@ void NIDAQmx::run()
 
 		float aiSamples[MAX_NUM_ANALOG_IN];
 
-		int packetCount = 0;
+		int count = 0;
 		for (int i = 0; i < arraySizeInSamps; i++)
 		{
 			// Add analog signal to buffer only if channel is enabled
@@ -328,12 +357,9 @@ void NIDAQmx::run()
 
 			if (i % MAX_NUM_ANALOG_IN == 0)
 			{
-
-				packetCount++;
-				eventCode = di_data[packetCount];
-				ai_timestamp += 1;
+				eventCode = di_data[count++];
+				ai_timestamp++;
 				aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &eventCode, 1);
-
 			}
 
 		}
@@ -400,7 +426,7 @@ AnalogIn::AnalogIn()
 
 AnalogIn::AnalogIn(String id) : InputChannel(id)
 {
-	voltageRange = VRange(-10.0, 10.0);
+	voltageRange = VRange(-5, 5);
 }
 
 void AnalogIn::setVoltageRange(VRange range)

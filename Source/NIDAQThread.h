@@ -28,6 +28,7 @@
 #include <DataThreadHeaders.h>
 #include <stdio.h>
 #include <string.h>
+#include <cmath>
 
 #include "nidaq-api/NIDAQmx.h"
 #include "NIDAQComponents.h"
@@ -115,6 +116,9 @@ public:
 
 	/** Returns the volts per bit of the data source.*/
 	float getBitVolts(const DataChannel* chan) const override;
+
+	/** Returns the volts per bit of the ADC source. */
+	float getAdcBitVolts(int chan) const;
 
 	/** Used to set default channel names.*/
 	void setDefaultChannelNames() override;

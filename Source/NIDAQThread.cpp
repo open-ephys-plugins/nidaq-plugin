@@ -66,7 +66,7 @@ void NIDAQThread::openConnection()
 	/* For now we default to first detected device */
 	mNIDAQ = new NIDAQmx(dm->devices[0].toUTF8());
 
-	setSampleRate(mNIDAQ->sampleRates.size() - 1);
+	setSampleRate(sampleRateIndex);
 
 	inputAvailable = true;
 	
@@ -122,7 +122,7 @@ int NIDAQThread::getSampleRateIndex()
 Array<String> NIDAQThread::getVoltageRanges()
 {
 	Array<String> voltageRanges;
-	for (VRange range : mNIDAQ->aiVRanges)
+	for (auto range : mNIDAQ->aiVRanges)
 	{
 		voltageRanges.add(String(range.vmin) + "-" + String(range.vmax) + " V");
 	}
@@ -174,7 +174,7 @@ bool NIDAQThread::startAcquisition()
 {
 	//TODO:
 	mNIDAQ->startThread();
-	startThread();
+	this->startThread();
     return true;
 }
 
@@ -185,7 +185,6 @@ void NIDAQThread::timerCallback()
 
 void NIDAQThread::startRecording()
 {
-
 }
 
 void NIDAQThread::stopRecording()
@@ -226,7 +225,6 @@ bool NIDAQThread::usesCustomNames() const
 /** Returns the number of virtual subprocessors this source can generate */
 unsigned int NIDAQThread::getNumSubProcessors() const
 {
-	//TODO?
 	return 1;
 }
 
@@ -241,12 +239,6 @@ int NIDAQThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int subPr
 	{
 		numChans = getNumAnalogInputs();
 	}
-	/*
-	if (type == DataChannel::EVENT_CHANNEL)
-	{
-		numChans = getNumDigitalInputs();
-	}
-	*/
 
 	return numChans;
 }
@@ -254,7 +246,6 @@ int NIDAQThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int subPr
 /** Returns the number of TTL channels that each subprocessor generates*/
 int NIDAQThread::getNumTTLOutputs(int subProcessorIdx) const
 {
-	//TODO
 	return 1;
 }
 
@@ -267,9 +258,18 @@ float NIDAQThread::getSampleRate(int subProcessorIdx) const
 /** Returns the volts per bit of the data source.*/
 float NIDAQThread::getBitVolts(const DataChannel* chan) const
 {
-	//TODO
-	return mNIDAQ->bitVolts;
+
+	float vmin = mNIDAQ->voltageRange.vmin;
+	float vmax = mNIDAQ->voltageRange.vmax;
+
+	float bitVolts = (vmax - vmin) / pow(2, mNIDAQ->adcResolution);
+
+	printf("Calculated bit volts: %1.6f", bitVolts);
+
+	return bitVolts;
+
 }
+
 
 void NIDAQThread::setTriggerMode(bool trigger)
 {
