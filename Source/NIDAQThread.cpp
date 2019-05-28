@@ -34,7 +34,7 @@ GenericEditor* NIDAQThread::createEditor(SourceNode* sn)
     return new NIDAQEditor(sn, this, true);
 }
 
-NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), recordingTimer(this)
+NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn)
 {
 	progressBar = new ProgressBar(initializationProgress);
 
@@ -183,14 +183,6 @@ void NIDAQThread::timerCallback()
 	//TODO:
 }
 
-void NIDAQThread::startRecording()
-{
-}
-
-void NIDAQThread::stopRecording()
-{
-	//TODO:
-}
 
 /** Stops data transfer.*/
 bool NIDAQThread::stopAcquisition()
@@ -246,7 +238,7 @@ int NIDAQThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int subPr
 /** Returns the number of TTL channels that each subprocessor generates*/
 int NIDAQThread::getNumTTLOutputs(int subProcessorIdx) const
 {
-	return 1;
+	return getNumDigitalInputs();
 }
 
 /** Returns the sample rate of the data source.*/
@@ -308,13 +300,3 @@ bool NIDAQThread::updateBuffer()
 	return true;
 }
 
-RecordingTimer::RecordingTimer(NIDAQThread* t_)
-{
-	thread = t_;
-}
-
-void RecordingTimer::timerCallback()
-{
-	thread->startRecording();
-	stopTimer();
-}

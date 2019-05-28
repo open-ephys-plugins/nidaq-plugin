@@ -36,17 +36,6 @@
 class SourceNode;
 class NIDAQThread;
 
-class RecordingTimer : public Timer
-{
-
-public:
-
-	RecordingTimer(NIDAQThread* t_);
-	void timerCallback();
-
-	NIDAQThread* thread;
-};
-
 /**
 
 	Communicates with NI-DAQmx.
@@ -84,17 +73,18 @@ public:
 	/** Stops data transfer.*/
 	bool stopAcquisition() override;
 
-	// DataThread Methods
+	/** Input channel info */
 	int getNumAnalogInputs() const;
 	int getNumDigitalInputs() const;
 
 	Array<String> getVoltageRanges();
-	Array<String> getSampleRates();
-
 	int getVoltageRangeIndex();
+
+	Array<String> getSampleRates();
 	int getSampleRateIndex();
 
 	void toggleAIChannel(int channelIndex);
+	void toggleDIChannel(int channelIndex);
 
 	/** Returns the number of virtual subprocessors this source can generate */
 	unsigned int getNumSubProcessors() const override;
@@ -174,21 +164,22 @@ public:
 
 private:
 
+	/* Handle to NIDAQ API info */
 	NIDAQAPI api;
 
-	//TODO: implement this as a singleton 
+	/* Manages connected NIDAQ devices */
 	ScopedPointer<NIDAQmxDeviceManager> dm; 
 
+	/* Handle to chosen NIDAQ device */
 	ScopedPointer<NIDAQmx> mNIDAQ;
 
-	bool inputAvailable;
+	/* Handle to input channels */
 	Array<AnalogIn> ai;
 	Array<DigitalIn> di;
 
+	/* Selectable device properties */
 	int sampleRateIndex;
 	int voltageRangeIndex;
-
-	DataBuffer* aiData;
 
 	bool isRecording;
 
@@ -197,8 +188,6 @@ private:
 	void closeConnection();
 
 	Array<float> fillPercentage;
-
-	RecordingTimer recordingTimer;
 
 };
 

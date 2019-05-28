@@ -1,0 +1,13 @@
+language: cpp
+os: windows
+env:
+  - MSBUILD_PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin"
+script:
+  - export PATH=$MSBUILD_PATH:$PATH
+  - cd ..
+  - git clone https://github.com/open-ephys/plugin-GUI.git
+  - cd plugin-GUI/Builds/VisualStudio2013
+  - MSBuild.exe open-ephys.sln
+  - cd ../../..
+  - cd ni-daq
+  - ./Builds/build.bat

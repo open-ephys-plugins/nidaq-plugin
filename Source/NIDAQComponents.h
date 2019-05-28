@@ -30,6 +30,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nidaq-api/NIDAQmx.h"
 
+#define CHANNEL_BUFFER_SIZE 1000
+#define MAX_ANALOG_CHANNELS 8
+#define ERR_BUFF_SIZE 2048
+#define STR2CHR( jString ) ((jString).toUTF8())
+#define DAQmxErrChk(functionCall) if( DAQmxFailed(error=(functionCall)) ) goto Error; else
+
 class NIDAQmx;
 class InputChannel;
 class AnalogIn;
@@ -80,6 +86,7 @@ struct VRange {
 class NIDAQmx : public NIDAQComponent, public Thread
 {
 public:
+
 	NIDAQmx(const char* deviceName);
 	~NIDAQmx();
 
@@ -98,30 +105,33 @@ public:
 
 	void run();
 
-	NIDAQ::float64  ai_data[8000];
-	NIDAQ::uInt8    di_data[1000];
+	NIDAQ::float64  ai_data[CHANNEL_BUFFER_SIZE * MAX_ANALOG_CHANNELS];
+	NIDAQ::uInt8    di_data[CHANNEL_BUFFER_SIZE];
 
 	friend class NIDAQThread;
 
 private:
+
+	/* Device properties */
 	String deviceName;
 	String productName;
+	
 	NIDAQ::int32 deviceCategory;
 
 	bool simAISamplingSupported;
 
+	float adcResolution;
+	Array<float> sampleRates;
+	Array<VRange> aiVRanges;
+
 	Array<AnalogIn> 	ai;
 	Array<DigitalIn> 	di;
 
-	Array<VRange> aiVRanges;
-	Array<VRange> diVRanges;
-
+	/** Selectable device properties */
+	float samplerate;
 	VRange voltageRange;
 	Array<bool> aiChannelEnabled;
-
-	float samplerate;
-	float adcResolution;
-	Array<float> sampleRates;
+	Array<bool> diChannelEnabled;
 
 };
 
