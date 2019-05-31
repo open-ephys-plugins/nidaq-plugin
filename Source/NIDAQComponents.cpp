@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <chrono>
+#include <math.h>
 
 #include "NIDAQComponents.h"
 
@@ -105,11 +106,22 @@ NIDAQmx::NIDAQmx(const char* name) : Thread("NIDAQmx_Thread"), deviceName(name)
 		sampleRates.add(1000.0f * rate);
 	}
 
-	//Default to highest sample rate
+	// Default to highest sample rate
 	samplerate = sampleRates[sampleRates.size() - 1];
 
-	//Default to largest voltage range
+	// Default to largest voltage range
 	voltageRange = aiVRanges[aiVRanges.size() - 1];
+
+	// Disable all channels by default
+	for (int i = 0; i < aiChannelEnabled.size(); i++)
+	{
+		aiChannelEnabled.set(i, false);
+	}
+
+	for (int i = 0; i < diChannelEnabled.size(); i++)
+	{
+		diChannelEnabled.set(i, false);
+	}
 
 }
 
@@ -332,18 +344,23 @@ void NIDAQmx::run()
 			fflush(stdout);
 		}
 
-		float aiSamples[MAX_ANALOG_CHANNELS];
-
+		float aiSamples[MAX_ANALOG_CHANNELS] = { 0 };
+		uint64 linesEnabled = 0;
 		int count = 0;
 		for (int i = 0; i < arraySizeInSamps; i++)
 		{
-			// Add analog signal to buffer only if channel is enabled
-			if (aiChannelEnabled[i % MAX_ANALOG_CHANNELS])
-				aiSamples[i % MAX_ANALOG_CHANNELS] = ai_data[i];
+			int channel = i % MAX_ANALOG_CHANNELS;
+
+			// Turn input signals on/off on the fly
+			if (aiChannelEnabled[channel])
+				aiSamples[channel] = ai_data[i];
+
+			if (diChannelEnabled[channel])
+				linesEnabled = linesEnabled | (1 << channel);
 
 			if (i % MAX_ANALOG_CHANNELS == 0)
 			{
-				eventCode = di_data[count++];
+				eventCode = di_data[count++] & linesEnabled;
 				ai_timestamp++;
 				aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &eventCode, 1);
 			}

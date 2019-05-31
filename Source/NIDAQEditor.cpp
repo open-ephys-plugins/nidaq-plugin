@@ -158,7 +158,7 @@ void FifoMonitor::paint(Graphics& g)
 	g.fillRoundedRectangle(2, this->getHeight() - 2 - barHeight, this->getWidth() - 4, barHeight, 2);
 }
 
-AIButton::AIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(true)
+AIButton::AIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(false)
 {
 	startTimer(500);
 }
@@ -209,7 +209,7 @@ void AIButton::timerCallback()
 
 }
 
-DIButton::DIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(true)
+DIButton::DIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(false)
 {
 	startTimer(500);
 }
@@ -313,8 +313,6 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 		addAndMakeVisible(b);
 		aiButtons.add(b);
 
-		//p->setId(? );
-
 	}
 
 	int xOffset;
@@ -331,8 +329,6 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 		b->addListener(this);
 		addAndMakeVisible(b);
 		diButtons.add(b);
-
-		//p->setId(? );
 
 	}
 
@@ -428,6 +424,7 @@ void NIDAQEditor::buttonEvent(Button* button)
 	else if (diButtons.contains((DIButton*)button))
 	{
 		((DIButton*)button)->setEnabled(!((DIButton*)button)->enabled);
+		thread->toggleDIChannel(((AIButton*)button)->getId());
 		repaint();
 	}
 }

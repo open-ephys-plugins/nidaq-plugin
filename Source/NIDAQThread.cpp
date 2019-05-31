@@ -92,6 +92,11 @@ void NIDAQThread::toggleAIChannel(int index)
 	mNIDAQ->aiChannelEnabled.set(index, !mNIDAQ->aiChannelEnabled[index]);
 }
 
+void NIDAQThread::toggleDIChannel(int index)
+{
+	mNIDAQ->diChannelEnabled.set(index, !mNIDAQ->diChannelEnabled[index]);
+}
+
 void NIDAQThread::setVoltageRange(int rangeIndex)
 {
 	/* Doesnt work like I think it does...why??? */
