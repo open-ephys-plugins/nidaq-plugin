@@ -181,6 +181,8 @@ private:
 	int sampleRateIndex;
 	int voltageRangeIndex;
 
+	bool inputAvailable;
+
 	bool isRecording;
 
 	CriticalSection displayMutex;

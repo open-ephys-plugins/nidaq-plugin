@@ -343,7 +343,7 @@ void NIDAQmx::run()
 
 			if (i % MAX_ANALOG_CHANNELS == 0)
 			{
-				eventCode = ~di_data[count++];
+				eventCode = di_data[count++];
 				ai_timestamp++;
 				aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &eventCode, 1);
 			}
