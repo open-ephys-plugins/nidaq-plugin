@@ -38,43 +38,92 @@ NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn)
 {
 	progressBar = new ProgressBar(initializationProgress);
 
-	if (openConnection() == 0)
-	{
-		int totalChans = getNumAnalogInputs();
-		sourceBuffers.add(new DataBuffer(totalChans, 10000));
+	dm = new NIDAQmxDeviceManager();
 
-		mNIDAQ->aiBuffer = sourceBuffers.getLast();
-
-		//Default to highest sample rate, largest voltage range
-		sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
-		voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
-	}
 }
 
 NIDAQThread::~NIDAQThread()
 {
 }
+void NIDAQThread::selectFromAvailableDevices()
+{
+
+	/* Allow the user to choose a device.
+	If no device is chosen (i.e. user clicks outside of popup), default to first device in list */
+	PopupMenu deviceSelect;
+	StringArray productNames;
+	for (int i = 0; i < dm->getNumAvailableDevices(); i++)
+	{
+		ScopedPointer<NIDAQmx> n = new NIDAQmx(STR2CHR(dm->getDeviceFromIndex(i)));
+		if (!(n->getProductName() == getProductName()))
+		{
+			deviceSelect.addItem(productNames.size() + 1, n->getProductName());
+			productNames.add(n->getProductName());
+		}
+	}
+	int selectedDeviceIndex = deviceSelect.show();
+	if (selectedDeviceIndex == 0)
+		selectedDeviceIndex = 1;
+
+	swapConnection(productNames[selectedDeviceIndex - 1]);
+}
+
+String NIDAQThread::getProductName() const
+{
+	return mNIDAQ->productName;
+}
 
 int NIDAQThread::openConnection()
 {
 
-	dm = new NIDAQmxDeviceManager();
-
+	inputAvailable = false;
+	
 	dm->scanForDevices();
 
-	if (dm->selectedDeviceName.length() != 0)
+	if (dm->getNumAvailableDevices() == 0)
 	{
-
-		mNIDAQ = new NIDAQmx(STR2CHR(dm->selectedDeviceName));
-
-		setSampleRate(sampleRateIndex);
-
+		return 1;
+	}
+	else
+	{
 		inputAvailable = true;
 
-		return 0;
+		mNIDAQ = new NIDAQmx(STR2CHR(dm->getDeviceFromIndex(0)));
 
+		sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
+
+		mNIDAQ->aiBuffer = sourceBuffers.getLast();
+
+		sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+		setSampleRate(sampleRateIndex);
+
+		voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
+		setVoltageRange(voltageRangeIndex);
+
+		return 0;
 	}
-	return 1;
+
+}
+
+int NIDAQThread::getNumAvailableDevices()
+{
+	return dm->getNumAvailableDevices();
+}
+
+int NIDAQThread::swapConnection(String productName)
+{
+	mNIDAQ = new NIDAQmx(STR2CHR(dm->getDeviceFromProductName(productName)));
+	sourceBuffers.removeLast();
+	sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
+	mNIDAQ->aiBuffer = sourceBuffers.getLast();
+
+	sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+	setSampleRate(sampleRateIndex);
+
+	voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
+	setVoltageRange(voltageRangeIndex);
+
+	return 0;
 }
 
 void NIDAQThread::closeConnection()
@@ -103,12 +152,7 @@ void NIDAQThread::toggleDIChannel(int index)
 
 void NIDAQThread::setVoltageRange(int rangeIndex)
 {
-	/* Doesnt work like I think it does...why??? */
 	voltageRangeIndex = rangeIndex;
-	for (auto input : mNIDAQ->ai)
-	{
-		input.setVoltageRange(mNIDAQ->aiVRanges[rangeIndex]);
-	}
 	mNIDAQ->voltageRange = mNIDAQ->aiVRanges[rangeIndex];
 }
 
@@ -167,17 +211,6 @@ XmlElement NIDAQThread::getInfoXml()
 
 }
 
-String NIDAQThread::getInfoString()
-{
-
-	String infoString;
-
-	infoString += "TEST";
-
-	return infoString;
-
-}
-
 /** Initializes data transfer.*/
 bool NIDAQThread::startAcquisition()
 {
@@ -196,7 +229,7 @@ void NIDAQThread::timerCallback()
 /** Stops data transfer.*/
 bool NIDAQThread::stopAcquisition()
 {
-	//TODO:
+
 	if (isThreadRunning())
 	{
 		signalThreadShouldExit();

@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class UtilityButton;
 /**
 
-User interface for the BNC-2110 terminal block.
+User interface for NIDAQmx devices.
 
 @see SourceNode
 
@@ -100,6 +100,17 @@ private:
 
 };
 
+class DeviceSwapButton : public TextButton
+{
+	DeviceSwapButton();
+	~DeviceSwapButton();
+
+	friend class NIDAQEditor;
+
+private:
+	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
+};
+
 class FifoMonitor : public Component, public Timer
 {
 public:
@@ -134,11 +145,13 @@ public:
 	NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* thread, bool useDefaultParameterEditors);
 	virtual ~NIDAQEditor();
 
+	void draw();
+
 	void buttonEvent(Button* button);
 	void comboBoxChanged(ComboBox*);
 
-	void saveEditorParameters(XmlElement*);
-	void loadEditorParameters(XmlElement*);
+	void saveCustomParameters(XmlElement*);
+	void loadCustomParameters(XmlElement*);
 
 private:
 
@@ -149,6 +162,8 @@ private:
 	ScopedPointer<ComboBox> voltageRangeSelectBox;
 	ScopedPointer<UtilityButton> directoryButton;
 	ScopedPointer<FifoMonitor> fifoMonitor;
+
+	ScopedPointer<Button> swapDeviceButton;
 
 	Array<File> savingDirectories;
 

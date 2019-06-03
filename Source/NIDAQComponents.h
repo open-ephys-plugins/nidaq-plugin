@@ -55,7 +55,7 @@ public:
 
 /* API */
 
-class NIDAQAPI : public NIDAQComponent
+class NIDAQAPI
 {
 public:
 	void getInfo();
@@ -68,11 +68,17 @@ public:
 	~NIDAQmxDeviceManager();
 
 	void scanForDevices();
+	String selectFromAvailableDevices();
+	String getDeviceFromIndex(int deviceIndex);
+	String getDeviceFromProductName(String productName);
+
+	int getNumAvailableDevices();
 
 	friend class NIDAQThread;
 
 private:
-	String selectedDeviceName;
+	int selectedDeviceIndex;
+	StringArray devices;
 	
 };
 
@@ -83,55 +89,55 @@ struct VRange {
 		: vmin(rmin), vmax(rmax) {}
 };
 
-class NIDAQmx : public NIDAQComponent, public Thread
+class NIDAQmx : public Thread
 {
 public:
 
+	NIDAQmx();
 	NIDAQmx(const char* deviceName);
 	~NIDAQmx();
 
-	DataBuffer* aiBuffer;
-
-	int64 ai_timestamp;
-	uint64 eventCode;
-
-	void getInfo();
-
-	void connect();
+	void connect(); 
 
 	void getAIChannels();
 	void getAIVoltageRanges();
 	void getDIChannels();
 
-	void run();
+	String getProductName();
 
-	NIDAQ::float64  ai_data[CHANNEL_BUFFER_SIZE * MAX_ANALOG_CHANNELS];
-	NIDAQ::uInt8    di_data[CHANNEL_BUFFER_SIZE];
+	void run();
 
 	friend class NIDAQThread;
 
 private:
 
-	/* Device properties */
 	String deviceName;
 	String productName;
-	
 	NIDAQ::int32 deviceCategory;
 
+	bool isUSBDevice;
 	bool simAISamplingSupported;
 
 	float adcResolution;
 	Array<float> sampleRates;
 	Array<VRange> aiVRanges;
 
-	Array<AnalogIn> 	ai;
-	Array<DigitalIn> 	di;
-
-	/** Selectable device properties */
 	float samplerate;
 	VRange voltageRange;
 	Array<bool> aiChannelEnabled;
 	Array<bool> diChannelEnabled;
+
+	Array<AnalogIn> 	ai;
+	Array<DigitalIn> 	di;
+
+	NIDAQ::float64		ai_data[CHANNEL_BUFFER_SIZE * MAX_ANALOG_CHANNELS];
+	NIDAQ::uInt8		di_data_8[CHANNEL_BUFFER_SIZE]; //PXI devices use 8-bit read
+	NIDAQ::uInt32		di_data_32[CHANNEL_BUFFER_SIZE]; //USB devices use 32-bit read
+
+	int64 ai_timestamp;
+	uint64 eventCode;
+
+	DataBuffer* aiBuffer;
 
 };
 

@@ -59,19 +59,22 @@ public:
 	/** Returns true if the data source is connected, false otherwise.*/
 	bool foundInputSource();
 
-	/** Returns version and serial number info for hardware and API as a string.*/
-	String getInfoString();
-
 	/** Returns version and serial number info for hardware and API as XML.*/
 	XmlElement getInfoXml();
 
+	// Connect to first available device
 	int openConnection();
+
+	// Helper method for loading...
+	int swapConnection(String productName);
 
 	/** Initializes data transfer.*/
 	bool startAcquisition() override;
 
 	/** Stops data transfer.*/
 	bool stopAcquisition() override;
+
+	String getProductName() const;
 
 	/** Input channel info */
 	int getNumAnalogInputs() const;
@@ -85,6 +88,11 @@ public:
 
 	void toggleAIChannel(int channelIndex);
 	void toggleDIChannel(int channelIndex);
+
+	int getNumAvailableDevices();
+	void selectFromAvailableDevices();
+
+	void selectDevice();
 
 	/** Returns the number of virtual subprocessors this source can generate */
 	unsigned int getNumSubProcessors() const override;
@@ -170,6 +178,9 @@ private:
 	/* Manages connected NIDAQ devices */
 	ScopedPointer<NIDAQmxDeviceManager> dm; 
 
+	/* Flag any available devices */
+	bool inputAvailable;
+
 	/* Handle to chosen NIDAQ device */
 	ScopedPointer<NIDAQmx> mNIDAQ;
 
@@ -180,8 +191,6 @@ private:
 	/* Selectable device properties */
 	int sampleRateIndex;
 	int voltageRangeIndex;
-
-	bool inputAvailable;
 
 	bool isRecording;
 

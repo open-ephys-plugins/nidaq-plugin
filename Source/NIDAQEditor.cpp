@@ -262,6 +262,23 @@ void DIButton::timerCallback()
 
 }
 
+DeviceSwapButton::DeviceSwapButton() : TextButton("SWAP") {}
+
+DeviceSwapButton::~DeviceSwapButton() {}
+
+void DeviceSwapButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
+{
+
+	if (isMouseOver)
+		g.setColour(Colours::black);
+	else
+		g.setColour(Colours::darkgrey);
+	g.fillRoundedRectangle(0, 0, 40, 15, 2);
+	g.setFont(10);
+
+
+}
+
 BackgroundLoader::BackgroundLoader(NIDAQThread* thread, NIDAQEditor* editor)
 	: Thread("NIDAQ Loader"), t(thread), e(editor)
 {
@@ -275,8 +292,6 @@ void BackgroundLoader::run()
 {
 	/* This process is used to initiate processor loading in the background to prevent this plugin from blocking the main GUI*/
 
-	/*Basic steps:*/
-	t->openConnection();
 
 	/* Let the main GUI know the plugin is done initializing */
 	MessageManagerLock mml;
@@ -290,7 +305,21 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	: GenericEditor(parentNode, useDefaultParameterEditors), thread(t)
 {
 
-	thread = t;
+	t->openConnection();
+
+	draw();
+
+	/*
+	uiLoader = new BackgroundLoader(t, this);
+	uiLoader->startThread();
+	*/
+
+}
+
+void NIDAQEditor::draw()
+{
+
+	NIDAQThread* t = thread; 
 
 	int nAI = t->getNumAnalogInputs();
 	int nDI = t->getNumDigitalInputs();
@@ -298,6 +327,8 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	int maxChannelsPerColumn = 4;
 	int aiChannelsPerColumn = nAI > 0 && nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;
 	int diChannelsPerColumn = nDI > 0 && nDI < maxChannelsPerColumn ? nDI : maxChannelsPerColumn;
+
+	aiButtons.clear();
 
 	for (int i = 0; i < nAI; i++)
 	{
@@ -314,6 +345,8 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 		aiButtons.add(b);
 
 	}
+
+	diButtons.clear();
 
 	int xOffset;
 	for (int i = 0; i < nDI; i++)
@@ -355,11 +388,21 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	voltageRangeSelectBox->setSelectedItemIndex(t->getVoltageRangeIndex(), false);
 	voltageRangeSelectBox->addListener(this);
 	addAndMakeVisible(voltageRangeSelectBox);
-	
+
 	fifoMonitor = new FifoMonitor(thread);
 	fifoMonitor->setBounds(xOffset + 2, 105, 70, 12);
 	addAndMakeVisible(fifoMonitor);
 
+	if (t->getNumAvailableDevices() > 0)
+	{
+		swapDeviceButton = new DeviceSwapButton();
+		swapDeviceButton->setBounds(xOffset + 70, 5, 15, 15);
+		swapDeviceButton->addListener(this);
+		swapDeviceButton->setAlpha(0.5f);
+		swapDeviceButton->setButtonText("SWAP");
+		addAndMakeVisible(swapDeviceButton);
+	}
+	
 	desiredWidth = xOffset + 100;
 
 	background = new EditorBackground(nAI, nDI);
@@ -368,11 +411,7 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	background->toBack();
 	background->repaint();
 
-	/*
-
-	uiLoader = new BackgroundLoader(t, this);
-	uiLoader->startThread();
-	*/
+	setDisplayName("NIDAQmx-(" + t->getProductName() + ")");
 }
 
 NIDAQEditor::~NIDAQEditor()
@@ -427,45 +466,27 @@ void NIDAQEditor::buttonEvent(Button* button)
 		thread->toggleDIChannel(((AIButton*)button)->getId());
 		repaint();
 	}
-}
-
-
-void NIDAQEditor::saveEditorParameters(XmlElement* xml)
-{
-	/*
-	std::cout << "Saving NI-DAQ editor." << std::endl;
-
-	XmlElement* xmlNode = xml->createNewChildElement("NIDAQ_EDITOR");
-
-	for (int slot = 0; slot < thread->getNumBasestations(); slot++)
+	else if (button == swapDeviceButton)
 	{
-		String directory_name = savingDirectories[slot].getFullPathName();
-		if (directory_name.length() == 2)
-			directory_name += "\\\\";
-		xmlNode->setAttribute("Slot" + String(slot) + "Directory", directory_name);
-	}
-	*/
-
-}
-
-void NIDAQEditor::loadEditorParameters(XmlElement* xml)
-{
-	/*
-	forEachXmlChildElement(*xml, xmlNode)
-	{
-		if (xmlNode->hasTagName("NIDAQ_EDITOR"))
+		if (!thread->isThreadRunning())
 		{
-			std::cout << "Found parameters for Neuropixels editor" << std::endl;
-
-			for (int slot = 0; slot < thread->getNumBasestations(); slot++)
-			{
-				File directory = File(xmlNode->getStringAttribute("Slot" + String(slot) + "Directory"));
-				std::cout << "Setting thread directory for slot " << slot << std::endl;
-				thread->setDirectoryForSlot(slot, directory);
-				directoryButtons[slot]->setLabel(directory.getFullPathName().substring(0, 2));
-				savingDirectories.set(slot, directory);
-			}
+			thread->selectFromAvailableDevices();
+			setDisplayName(thread->getProductName());
+			draw();
 		}
 	}
-	*/
+}
+
+
+void NIDAQEditor::saveCustomParameters(XmlElement* xml)
+{
+	xml->setAttribute("productName", thread->getProductName());
+}
+
+
+void NIDAQEditor::loadCustomParameters(XmlElement* xml)
+{
+	String productName = xml->getStringAttribute("productName", "NIDAQmx");
+	thread->swapConnection(productName);
+	draw();
 }
