@@ -65,7 +65,7 @@ public:
 	/** Returns version and serial number info for hardware and API as XML.*/
 	XmlElement getInfoXml();
 
-	void openConnection();
+	int openConnection();
 
 	/** Initializes data transfer.*/
 	bool startAcquisition() override;

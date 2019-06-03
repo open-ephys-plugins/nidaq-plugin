@@ -38,39 +38,43 @@ NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn)
 {
 	progressBar = new ProgressBar(initializationProgress);
 
-	openConnection();
+	if (openConnection() == 0)
+	{
+		int totalChans = getNumAnalogInputs();
+		sourceBuffers.add(new DataBuffer(totalChans, 10000));
 
-	int totalChans = getNumAnalogInputs();
-	sourceBuffers.add(new DataBuffer(totalChans, 10000));
+		mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
-	mNIDAQ->aiBuffer = sourceBuffers.getLast();
-
-	//Default to highest sample rate, largest voltage range
-	sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
-	voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
-	
+		//Default to highest sample rate, largest voltage range
+		sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+		voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
+	}
 }
 
 NIDAQThread::~NIDAQThread()
 {
 }
 
-void NIDAQThread::openConnection()
+int NIDAQThread::openConnection()
 {
 
 	dm = new NIDAQmxDeviceManager();
 
 	dm->scanForDevices();
 
-	/* TODO: Prompt user which device to select: */
-	/* For now we default to first detected device */
-	mNIDAQ = new NIDAQmx(dm->devices[0].toUTF8());
+	if (dm->selectedDeviceName.length() != 0)
+	{
 
-	setSampleRate(sampleRateIndex);
+		mNIDAQ = new NIDAQmx(STR2CHR(dm->selectedDeviceName));
 
-	inputAvailable = true;
-	
-	printf("Created new device: %s", mNIDAQ->deviceName);
+		setSampleRate(sampleRateIndex);
+
+		inputAvailable = true;
+
+		return 0;
+
+	}
+	return 1;
 }
 
 void NIDAQThread::closeConnection()

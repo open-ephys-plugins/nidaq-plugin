@@ -72,7 +72,7 @@ public:
 	friend class NIDAQThread;
 
 private:
-	Array<String> devices;
+	String selectedDeviceName;
 	
 };
 

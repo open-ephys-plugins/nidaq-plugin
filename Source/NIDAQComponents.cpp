@@ -73,18 +73,52 @@ NIDAQmxDeviceManager::~NIDAQmxDeviceManager()
 void NIDAQmxDeviceManager::scanForDevices()
 {
 
-	/* Device names */
 	char data[2048] = { 0 };
 	NIDAQ::DAQmxGetSysDevNames(data, sizeof(data));
-	//This will return a comma-seperated list of dev names into data
-	//For now we are only supporting the first device found
-	//TODO: Add support for string splitting multiple devices
-	devices.add(&data[0]);
-	printf("Device Name: %s\n", devices[0]);
+
+	StringArray deviceList; 
+	deviceList.addTokens(&data[0], ", ", "\"");
+
+	StringArray deviceNames;
+	StringArray productList;
+
+	std::cout << "Found devices:" << std::endl;
+	for (int i = 0; i < deviceList.size(); i++)
+	{
+		if (deviceList[i].length() > 0)
+		{
+
+			printf("%s\n", deviceList[i].toUTF8());
+			deviceNames.add(deviceList[i]);
+
+			/* Get product name */
+			char name[2048] = { 0 };
+			NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceList[i]), &name[0], sizeof(name));
+			String productName = String(&name[0]);
+			printf("Product Name: %s\n", productName);
+			productList.add(productName);
+
+			fflush(stdout);
+
+		}
+	}
+
+	/* Allow the user to choose a device. If no device is chosen, default to first device in list */
+	PopupMenu deviceSelect;
+	for (int i = 0; i < productList.size(); i++)
+	{
+		deviceSelect.addItem(i + 1, String(productList[i]));
+	}
+	int selectedDevice = deviceSelect.show();
+	if (selectedDevice == 0)
+		selectedDevice = 1;
+	selectedDeviceName = deviceNames[selectedDevice - 1];
 
 }
 
-NIDAQmx::NIDAQmx(const char* name) : Thread("NIDAQmx_Thread"), deviceName(name)
+NIDAQmx::NIDAQmx(const char* deviceName) 
+	: Thread("NIDAQmx_Thread"),
+	deviceName(deviceName)
 {
 
 	adcResolution = 14; //bits
@@ -139,18 +173,22 @@ void NIDAQmx::connect()
 	/* Get product name */
 	char data[2048] = { 0 };
 	NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceName), &data[0], sizeof(data));
-	productName = String(&data[0]);
+	String productName = String(&data[0]);
 	printf("Product Name: %s\n", productName);
 
 	/* Get category type */
+	NIDAQ::int32 deviceCategory;
 	NIDAQ::DAQmxGetDevProductCategory(STR2CHR(deviceName), &deviceCategory);
 	printf("Device Category: %i\n", deviceCategory);
 
 	/* Get simultaneous sampling supported */
+	bool simAISamplingSupported;
 	NIDAQ::bool32 supported = false;
 	NIDAQ::DAQmxGetDevAISimultaneousSamplingSupported(STR2CHR(deviceName), &supported);
 	simAISamplingSupported = (supported == 1);
 	printf("Simultaneous sampling %ssupported\n", simAISamplingSupported ? "" : "NOT ");
+
+	fflush(stdout);
 
 }
 
