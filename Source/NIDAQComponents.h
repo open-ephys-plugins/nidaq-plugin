@@ -68,7 +68,7 @@ public:
 	~NIDAQmxDeviceManager();
 
 	void scanForDevices();
-	String selectFromAvailableDevices();
+
 	String getDeviceFromIndex(int deviceIndex);
 	String getDeviceFromProductName(String productName);
 

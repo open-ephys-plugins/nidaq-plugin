@@ -76,35 +76,9 @@ void NIDAQmxDeviceManager::scanForDevices()
 	StringArray deviceNames;
 	StringArray productList;
 
-	std::cout << "Found devices:" << std::endl;
 	for (int i = 0; i < deviceList.size(); i++)
-	{
 		if (deviceList[i].length() > 0)
-		{
 			devices.add(deviceList[i].toUTF8());
-		}
-	}
-
-}
-
-String NIDAQmxDeviceManager::selectFromAvailableDevices()
-{
-
-	/* Allow the user to choose a device.
-	If no device is chosen (i.e. user clicks outside of popup), default to first device in list */
-	PopupMenu deviceSelect;
-	StringArray productNames;
-	for (int i = 0; i < devices.size(); i++)
-	{
-		ScopedPointer<NIDAQmx> n = new NIDAQmx(STR2CHR(devices[i]));
-		deviceSelect.addItem(i + 1, n->getProductName());
-		productNames.add(n->getProductName());
-	}
-	int selectedDeviceIndex = deviceSelect.show();
-	if (selectedDeviceIndex == 0)
-		selectedDeviceIndex = 1;
-
-	return productNames[selectedDeviceIndex-1];
 
 }
 
@@ -303,7 +277,10 @@ void NIDAQmx::run()
 	NIDAQ::TaskHandle	taskHandleAI = 0;
 
 	/* Create an analog input task */
-	DAQmxErrChk(NIDAQ::DAQmxCreateTask("AITask", &taskHandleAI));
+	if (isUSBDevice)
+		DAQmxErrChk(NIDAQ::DAQmxCreateTask("AITask_USB", &taskHandleAI));
+	else
+		DAQmxErrChk(NIDAQ::DAQmxCreateTask("AITask_PXI", &taskHandleAI));
 
 	/* Create a voltage channel for each analog input */
 	for (int i = 0; i < ai.size(); i++)
@@ -345,7 +322,10 @@ void NIDAQmx::run()
 	NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &lineName[0], sizeof(lineName));
 
 	/* Create a digital input task */
-	DAQmxErrChk(NIDAQ::DAQmxCreateTask("DITask", &taskHandleDI));
+	if (isUSBDevice)
+		DAQmxErrChk(NIDAQ::DAQmxCreateTask("DITask_USB", &taskHandleDI));
+	else
+		DAQmxErrChk(NIDAQ::DAQmxCreateTask("DITask_PXI", &taskHandleDI));
 
 	/* Create a channel for each digital input */
 	DAQmxErrChk(NIDAQ::DAQmxCreateDIChan(

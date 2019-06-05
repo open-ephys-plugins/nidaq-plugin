@@ -306,13 +306,7 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 {
 
 	t->openConnection();
-
 	draw();
-
-	/*
-	uiLoader = new BackgroundLoader(t, this);
-	uiLoader->startThread();
-	*/
 
 }
 
@@ -412,6 +406,7 @@ void NIDAQEditor::draw()
 	background->repaint();
 
 	setDisplayName("NIDAQmx-(" + t->getProductName() + ")");
+
 }
 
 NIDAQEditor::~NIDAQEditor()

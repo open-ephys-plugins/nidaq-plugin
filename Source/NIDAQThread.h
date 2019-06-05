@@ -44,7 +44,7 @@ class NIDAQThread;
 
 */
 
-class NIDAQThread : public DataThread, public Timer
+class NIDAQThread : public DataThread
 {
 
 public:
@@ -127,14 +127,8 @@ public:
 	/** Toggles between internal and external triggering. */
 	void setTriggerMode(bool trigger);
 
-	/** Toggles between saving to NPX file. */
-	void setRecordMode(bool record);
-
 	/** Toggles between auto-restart setting. */
 	void setAutoRestart(bool restart);
-
-	/** Starts data acquisition after a certain time.*/
-	void timerCallback();
 
 	/** Sets the currently selected input */
 	void setSelectedInput();
@@ -161,9 +155,6 @@ public:
 	static DataThread* createDataThread(SourceNode* sn);
 
 	GenericEditor* createEditor(SourceNode* sn);
-
-	ScopedPointer<ProgressBar> progressBar;
-	double initializationProgress;
 
 	friend class AIButton;
 	friend class DIButton;

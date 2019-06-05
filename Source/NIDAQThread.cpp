@@ -36,48 +36,18 @@ GenericEditor* NIDAQThread::createEditor(SourceNode* sn)
 
 NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn)
 {
-	progressBar = new ProgressBar(initializationProgress);
-
 	dm = new NIDAQmxDeviceManager();
-
 }
 
 NIDAQThread::~NIDAQThread()
 {
-}
-void NIDAQThread::selectFromAvailableDevices()
-{
-
-	/* Allow the user to choose a device.
-	If no device is chosen (i.e. user clicks outside of popup), default to first device in list */
-	PopupMenu deviceSelect;
-	StringArray productNames;
-	for (int i = 0; i < dm->getNumAvailableDevices(); i++)
-	{
-		ScopedPointer<NIDAQmx> n = new NIDAQmx(STR2CHR(dm->getDeviceFromIndex(i)));
-		if (!(n->getProductName() == getProductName()))
-		{
-			deviceSelect.addItem(productNames.size() + 1, n->getProductName());
-			productNames.add(n->getProductName());
-		}
-	}
-	int selectedDeviceIndex = deviceSelect.show();
-	if (selectedDeviceIndex == 0)
-		selectedDeviceIndex = 1;
-
-	swapConnection(productNames[selectedDeviceIndex - 1]);
-}
-
-String NIDAQThread::getProductName() const
-{
-	return mNIDAQ->productName;
 }
 
 int NIDAQThread::openConnection()
 {
 
 	inputAvailable = false;
-	
+
 	dm->scanForDevices();
 
 	if (dm->getNumAvailableDevices() == 0)
@@ -108,6 +78,32 @@ int NIDAQThread::openConnection()
 int NIDAQThread::getNumAvailableDevices()
 {
 	return dm->getNumAvailableDevices();
+}
+
+void NIDAQThread::selectFromAvailableDevices()
+{
+
+	PopupMenu deviceSelect;
+	StringArray productNames;
+	for (int i = 0; i < getNumAvailableDevices(); i++)
+	{
+		ScopedPointer<NIDAQmx> n = new NIDAQmx(STR2CHR(dm->getDeviceFromIndex(i)));
+		if (!(n->getProductName() == getProductName()))
+		{
+			deviceSelect.addItem(productNames.size() + 1, "Swap to " + n->getProductName());
+			productNames.add(n->getProductName());
+		}
+	}
+	int selectedDeviceIndex = deviceSelect.show();
+	if (selectedDeviceIndex == 0) //user clicked outside of popup window
+		return;
+
+	swapConnection(productNames[selectedDeviceIndex - 1]);
+}
+
+String NIDAQThread::getProductName() const
+{
+	return mNIDAQ->productName;
 }
 
 int NIDAQThread::swapConnection(String productName)
@@ -192,7 +188,6 @@ Array<String> NIDAQThread::getSampleRates()
 	return sampleRates;
 }
 
-/** Returns true if the data source is connected, false otherwise.*/
 bool NIDAQThread::foundInputSource()
 {
     return inputAvailable;
@@ -220,12 +215,6 @@ bool NIDAQThread::startAcquisition()
     return true;
 }
 
-void NIDAQThread::timerCallback()
-{
-	//TODO:
-}
-
-
 /** Stops data transfer.*/
 bool NIDAQThread::stopAcquisition()
 {
@@ -239,11 +228,6 @@ bool NIDAQThread::stopAcquisition()
 		mNIDAQ->signalThreadShouldExit();
 	}
     return true;
-}
-
-void NIDAQThread::setSelectedInput()
-{
-
 }
 
 void NIDAQThread::setDefaultChannelNames()
@@ -296,21 +280,11 @@ float NIDAQThread::getBitVolts(const DataChannel* chan) const
 	float vmin = mNIDAQ->voltageRange.vmin;
 	float vmax = mNIDAQ->voltageRange.vmax;
 
-	float bitVolts = (vmax - vmin) / pow(2, mNIDAQ->adcResolution);
-
-	printf("Calculated bit volts: %1.6f", bitVolts);
-
-	return bitVolts;
+	return (vmax - vmin) / pow(2, mNIDAQ->adcResolution);
 
 }
-
 
 void NIDAQThread::setTriggerMode(bool trigger)
-{
-    //TODO
-}
-
-void NIDAQThread::setRecordMode(bool record)
 {
     //TODO
 }
@@ -318,17 +292,6 @@ void NIDAQThread::setRecordMode(bool record)
 void NIDAQThread::setAutoRestart(bool restart)
 {
 	//TODO
-}
-
-void NIDAQThread::setDirectoryForInput(int id, File directory)
-{
-	//TODO
-}
-
-File NIDAQThread::getDirectoryForInput(int id)
-{
-	//TODO
-	return File::getCurrentWorkingDirectory();
 }
 
 float NIDAQThread::getFillPercentage(int id)
