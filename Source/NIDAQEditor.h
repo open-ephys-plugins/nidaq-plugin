@@ -160,10 +160,9 @@ private:
 
 	ScopedPointer<ComboBox> sampleRateSelectBox;
 	ScopedPointer<ComboBox> voltageRangeSelectBox;
-	ScopedPointer<UtilityButton> directoryButton;
 	ScopedPointer<FifoMonitor> fifoMonitor;
 
-	ScopedPointer<Button> swapDeviceButton;
+	ScopedPointer<UtilityButton> swapDeviceButton;
 
 	Array<File> savingDirectories;
 

@@ -262,22 +262,6 @@ void DIButton::timerCallback()
 
 }
 
-DeviceSwapButton::DeviceSwapButton() : TextButton("SWAP") {}
-
-DeviceSwapButton::~DeviceSwapButton() {}
-
-void DeviceSwapButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
-{
-
-	if (isMouseOver)
-		g.setColour(Colours::black);
-	else
-		g.setColour(Colours::darkgrey);
-	g.fillRoundedRectangle(0, 0, 40, 15, 2);
-	g.setFont(10);
-
-
-}
 
 BackgroundLoader::BackgroundLoader(NIDAQThread* thread, NIDAQEditor* editor)
 	: Thread("NIDAQ Loader"), t(thread), e(editor)
@@ -389,11 +373,10 @@ void NIDAQEditor::draw()
 
 	if (t->getNumAvailableDevices() > 0)
 	{
-		swapDeviceButton = new DeviceSwapButton();
-		swapDeviceButton->setBounds(xOffset + 70, 5, 15, 15);
+		swapDeviceButton = new UtilityButton("...", Font("Small Text", 13, Font::plain));
+		swapDeviceButton->setBounds(xOffset + 60, 5, 25, 15);
 		swapDeviceButton->addListener(this);
 		swapDeviceButton->setAlpha(0.5f);
-		swapDeviceButton->setButtonText("SWAP");
 		addAndMakeVisible(swapDeviceButton);
 	}
 	
