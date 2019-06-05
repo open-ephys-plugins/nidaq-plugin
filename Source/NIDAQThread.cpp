@@ -122,6 +122,16 @@ int NIDAQThread::swapConnection(String productName)
 	return 0;
 }
 
+void NIDAQThread::toggleSourceType(int id)
+{
+	mNIDAQ->toggleSourceType(id);
+}
+
+SOURCE_TYPE NIDAQThread::getSourceTypeForInput(int index)
+{
+	return mNIDAQ->st[index];
+}
+
 void NIDAQThread::closeConnection()
 {
 }

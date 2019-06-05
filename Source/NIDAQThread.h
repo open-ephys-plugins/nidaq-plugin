@@ -89,6 +89,9 @@ public:
 	void toggleAIChannel(int channelIndex);
 	void toggleDIChannel(int channelIndex);
 
+	SOURCE_TYPE getSourceTypeForInput(int index);
+	void toggleSourceType(int id);
+
 	int getNumAvailableDevices();
 	void selectFromAvailableDevices();
 
@@ -158,6 +161,7 @@ public:
 
 	friend class AIButton;
 	friend class DIButton;
+	friend class SourceTypeButton;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NIDAQThread);
 

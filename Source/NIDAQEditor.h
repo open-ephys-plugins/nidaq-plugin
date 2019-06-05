@@ -100,15 +100,27 @@ private:
 
 };
 
-class DeviceSwapButton : public TextButton
+class SourceTypeButton : public TextButton, public Timer
 {
-	DeviceSwapButton();
-	~DeviceSwapButton();
+public:
+	SourceTypeButton(int id, NIDAQThread* thread, SOURCE_TYPE source);
+
+	void setId(int id);
+	int getId();
+	void toggleSourceType();
+	void timerCallback();
+
+	void update(SOURCE_TYPE sourceType);
+
+	NIDAQThread* thread;
 
 	friend class NIDAQEditor;
 
 private:
-	void paintButton(Graphics& g, bool isMouseOver, bool isButtonDown);
+
+	int id;
+	bool enabled;
+
 };
 
 class FifoMonitor : public Component, public Timer
@@ -156,6 +168,7 @@ public:
 private:
 
 	OwnedArray<AIButton> aiButtons;
+	OwnedArray<TextButton> sourceTypeButtons;
 	OwnedArray<DIButton> diButtons;
 
 	ScopedPointer<ComboBox> sampleRateSelectBox;

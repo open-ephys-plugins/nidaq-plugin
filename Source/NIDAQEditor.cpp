@@ -53,16 +53,20 @@ void EditorBackground::paint(Graphics& g)
 			aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
 			aiChanWidth, aiChanHeight, 4, 3);
 
+		
 		g.setColour(Colours::darkgrey);
+
 		g.drawRoundedRectangle(
 			aiChanOffsetX + paddingX * colIndex * aiChanWidth,
 			aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
 			aiChanWidth, aiChanHeight, 4, 1);
 
+		/*
 		g.drawRoundedRectangle(
 			aiChanOffsetX + colIndex * paddingX * aiChanWidth + aiChanWidth - aiChanWidth / 3,
 			16 + paddingY * aiChanHeight * rowIndex,
 			aiChanWidth / 3 - 4, 14, 1, 0.4);
+		*/
 
 		g.setFont(10);
 		g.drawText(
@@ -71,10 +75,12 @@ void EditorBackground::paint(Graphics& g)
 			7 + aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
 			20, 10, Justification::centredLeft);
 
+		/*
 		g.drawText(String("FS"),
 			51 + aiChanOffsetX + paddingX * colIndex * aiChanWidth,
 			7 + aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
 			20, 10, Justification::centredLeft);
+		*/
 
 	}
 
@@ -262,6 +268,43 @@ void DIButton::timerCallback()
 
 }
 
+SourceTypeButton::SourceTypeButton(int id_, NIDAQThread* thread_, SOURCE_TYPE source) : id(id_), thread(thread_)
+{
+
+	update(source);
+
+}
+
+void SourceTypeButton::setId(int id_)
+{
+	id = id_;
+}
+
+int SourceTypeButton::getId()
+{
+	return id;
+}
+
+void SourceTypeButton::update(SOURCE_TYPE sourceType)
+{
+	switch (sourceType) {
+	case SOURCE_TYPE::GROUND_REF:
+		setButtonText("GS"); return;
+	case SOURCE_TYPE::FLOATING:
+		setButtonText("FS"); return;
+	case SOURCE_TYPE::DIFFERENTIAL:
+		setButtonText("DF"); return;
+	case SOURCE_TYPE::SINGLE_ENDED:
+		setButtonText("SE"); return;
+	default:
+		break;
+	}
+}
+
+void SourceTypeButton::timerCallback()
+{
+
+}
 
 BackgroundLoader::BackgroundLoader(NIDAQThread* thread, NIDAQEditor* editor)
 	: Thread("NIDAQ Loader"), t(thread), e(editor)
@@ -307,6 +350,7 @@ void NIDAQEditor::draw()
 	int diChannelsPerColumn = nDI > 0 && nDI < maxChannelsPerColumn ? nDI : maxChannelsPerColumn;
 
 	aiButtons.clear();
+	sourceTypeButtons.clear();
 
 	for (int i = 0; i < nAI; i++)
 	{
@@ -316,11 +360,20 @@ void NIDAQEditor::draw()
 		int xOffset = colIndex * 75 + 40;
 		int y_pos = 5 + rowIndex * 26;
 
-		AIButton* b = new AIButton(i, thread);
-		b->setBounds(xOffset, y_pos, 15, 15);
+		AIButton* a = new AIButton(i, thread);
+		a->setBounds(xOffset, y_pos, 15, 15);
+		a->addListener(this);
+		addAndMakeVisible(a);
+		aiButtons.add(a);
+
+		SOURCE_TYPE sourceType = thread->getSourceTypeForInput(i);
+		printf("Got source type for input %d: %d\n", i, sourceType);
+
+		SourceTypeButton* b = new SourceTypeButton(i, thread, sourceType);
+		b->setBounds(xOffset+20, y_pos, 20, 15);
 		b->addListener(this);
 		addAndMakeVisible(b);
-		aiButtons.add(b);
+		sourceTypeButtons.add(b);
 
 	}
 
@@ -371,9 +424,9 @@ void NIDAQEditor::draw()
 	fifoMonitor->setBounds(xOffset + 2, 105, 70, 12);
 	addAndMakeVisible(fifoMonitor);
 
-	if (t->getNumAvailableDevices() > 0)
+	if (t->getNumAvailableDevices() > 1)
 	{
-		swapDeviceButton = new UtilityButton("...", Font("Small Text", 13, Font::plain));
+		swapDeviceButton = new UtilityButton("...", Font("Small Text", 15, Font::plain));
 		swapDeviceButton->setBounds(xOffset + 60, 5, 25, 15);
 		swapDeviceButton->addListener(this);
 		swapDeviceButton->setAlpha(0.5f);
@@ -405,7 +458,6 @@ void NIDAQEditor::comboBoxChanged(ComboBox* comboBox)
 		if (!thread->isThreadRunning())
 		{
 			thread->setSampleRate(comboBox->getSelectedId() - 1);
-			std::cout << "Setting sample rate to index " << comboBox->getSelectedId() - 1 << "\n";
 			CoreServices::updateSignalChain(this);
 		}
 		else
@@ -418,7 +470,6 @@ void NIDAQEditor::comboBoxChanged(ComboBox* comboBox)
 		if (!thread->isThreadRunning())
 		{
 			thread->setVoltageRange(comboBox->getSelectedId() - 1);
-			std::cout << "Setting voltage range to index " << comboBox->getSelectedId() - 1 << "\n";
 			CoreServices::updateSignalChain(this);
 		}
 		else
@@ -441,8 +492,16 @@ void NIDAQEditor::buttonEvent(Button* button)
 	else if (diButtons.contains((DIButton*)button))
 	{
 		((DIButton*)button)->setEnabled(!((DIButton*)button)->enabled);
-		thread->toggleDIChannel(((AIButton*)button)->getId());
+		thread->toggleDIChannel(((DIButton*)button)->getId());
 		repaint();
+	}
+	else if (sourceTypeButtons.contains((SourceTypeButton*)button))
+	{
+		SOURCE_TYPE sourceType = thread->getSourceTypeForInput(((SourceTypeButton*)button)->getId());
+		thread->toggleSourceType(((SourceTypeButton*)button)->getId());
+		sourceType = thread->getSourceTypeForInput(((SourceTypeButton*)button)->getId());
+		((SourceTypeButton*)button)->update(sourceType);
+		fflush(stdout);
 	}
 	else if (button == swapDeviceButton)
 	{

@@ -89,6 +89,13 @@ struct VRange {
 		: vmin(rmin), vmax(rmax) {}
 };
 
+enum SOURCE_TYPE {
+	FLOATING = 0,
+	GROUND_REF,
+	SINGLE_ENDED,
+	DIFFERENTIAL
+};
+
 class NIDAQmx : public Thread
 {
 public:
@@ -99,11 +106,17 @@ public:
 
 	void connect(); 
 
+	String getProductName();
+	String getSerialNumber();
+
 	void getAIChannels();
 	void getAIVoltageRanges();
 	void getDIChannels();
 
-	String getProductName();
+	SOURCE_TYPE getSourceTypeForInput(int index);
+	void toggleSourceType(int id);
+
+	int getActiveDigitalLines();
 
 	void run();
 
@@ -114,6 +127,8 @@ private:
 	String deviceName;
 	String productName;
 	NIDAQ::int32 deviceCategory;
+	NIDAQ::uInt32 productNum;
+	NIDAQ::uInt32 serialNum;
 
 	bool isUSBDevice;
 	bool simAISamplingSupported;
@@ -128,10 +143,11 @@ private:
 	Array<bool> diChannelEnabled;
 
 	Array<AnalogIn> 	ai;
+	Array<SOURCE_TYPE>  st;
 	Array<DigitalIn> 	di;
 
 	NIDAQ::float64		ai_data[CHANNEL_BUFFER_SIZE * MAX_ANALOG_CHANNELS];
-	NIDAQ::uInt8		di_data_8[CHANNEL_BUFFER_SIZE]; //PXI devices use 8-bit read
+	NIDAQ::uInt8		di_data_8[CHANNEL_BUFFER_SIZE];  //PXI devices use 8-bit read
 	NIDAQ::uInt32		di_data_32[CHANNEL_BUFFER_SIZE]; //USB devices use 32-bit read
 
 	int64 ai_timestamp;
@@ -174,14 +190,10 @@ private:
 
 class AnalogIn : public InputChannel
 {
-	enum SOURCE_TYPE {
-		FLOATING = 0,
-		GROUND_REF
-	};
 
 public:
 	AnalogIn();
-	AnalogIn(String id);
+	AnalogIn(String id, NIDAQ::int32 category);
 	~AnalogIn();
 
 	void setVoltageRange(VRange range);

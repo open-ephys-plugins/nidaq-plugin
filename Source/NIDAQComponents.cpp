@@ -162,24 +162,34 @@ String NIDAQmx::getProductName()
 	return productName;
 }
 
+String NIDAQmx::getSerialNumber()
+{
+	return String(serialNum);
+}
+
 void NIDAQmx::connect()
 {
-
-	/* Get product name */
-	char data[2048] = { 0 };
-	NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceName), &data[0], sizeof(data));
-	productName = String(&data[0]);
-	printf("Product Name: %s\n", productName);
-
 	/* Get category type */
 	NIDAQ::DAQmxGetDevProductCategory(STR2CHR(deviceName), &deviceCategory);
 	printf("Device Category: %i\n", deviceCategory);
+
+	/* Get product name */
+	char pname[2048] = { 0 };
+	NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceName), &pname[0], sizeof(pname));
+	productName = String(&pname[0]);
+	printf("Product Name: %s\n", productName);
+
+	NIDAQ::DAQmxGetDevProductNum(STR2CHR(deviceName), &productNum);
+	printf("Product Num: %d\n", productNum);
+
+	NIDAQ::DAQmxGetDevSerialNum(STR2CHR(deviceName), &serialNum);
+	printf("Serial Num: %d\n", serialNum);
 
 	/* Get simultaneous sampling supported */
 	NIDAQ::bool32 supported = false;
 	NIDAQ::DAQmxGetDevAISimultaneousSamplingSupported(STR2CHR(deviceName), &supported);
 	simAISamplingSupported = (supported == 1);
-	printf("Simultaneous sampling %ssupported\n", simAISamplingSupported ? "" : "NOT ");
+	//printf("Simultaneous sampling %ssupported\n", simAISamplingSupported ? "" : "NOT ");
 
 	fflush(stdout);
 
@@ -198,14 +208,56 @@ void NIDAQmx::getAIChannels()
 	StringArray channel_list;
 	channel_list.addTokens(&data[0], ", ", "\"");
 
-	std::cout << "Found analog inputs:" << std::endl;
+	//printf("Found analog inputs:\n");
 	for (int i = 0; i < channel_list.size(); i++)
 	{
 		if (channel_list[i].length() > 0)
 		{
-			printf("%s\n", channel_list[i].toUTF8());
-			ai.add(AnalogIn(channel_list[i].toUTF8()));
-			aiChannelEnabled.add(true);
+			//printf("%s\n", channel_list[i].toUTF8());
+			ai.add(AnalogIn(channel_list[i].toUTF8(), deviceCategory));
+
+			/* Get channel termination */
+			NIDAQ::int32 data;
+			NIDAQ::DAQmxGetPhysicalChanAITermCfgs(STR2CHR(ai[i].id), &data);
+
+			/* Get channel input sources */
+			char pn[2048];
+			NIDAQ::DAQmxGetPhysicalChanAIInputSrcs(STR2CHR(ai[i].id), &pn[0], sizeof(pn));
+
+			printf("Terminal Config: %d\n", data);
+
+			if (data & DAQmx_Val_Bit_TermCfg_RSE)
+			{
+				printf("RSE\n");
+			}
+			if (data & DAQmx_Val_Bit_TermCfg_NRSE)
+			{
+				printf("NRSE\n");
+			}
+			if (data & DAQmx_Val_Bit_TermCfg_Diff)
+			{
+				printf("Diff\n");
+			}
+			if (data & DAQmx_Val_Bit_TermCfg_PseudoDIFF)
+			{
+				printf("PseudoDiff\n");
+			}
+
+			if (deviceCategory == 14644) // PXI-6133 BNC-2110
+			{
+				st.add(SOURCE_TYPE::SINGLE_ENDED);
+			}
+			else if (deviceCategory == 14646) // USB-6001
+			{
+				st.add(SOURCE_TYPE::FLOATING);
+			}
+			else
+			{
+				st.add(SOURCE_TYPE::FLOATING);
+				//TODO: Untested devices assume floating input...
+				//Find NidaqAPI call that can check valid source types per device
+			}
+			aiChannelEnabled.add(false);
 		}
 	}
 
@@ -219,14 +271,14 @@ void NIDAQmx::getAIVoltageRanges()
 	NIDAQ::float64 data[512];
 	NIDAQ::DAQmxGetDevAIVoltageRngs(STR2CHR(deviceName), &data[0], sizeof(data));
 
-	printf("Detected voltage ranges:\n");
+	//printf("Detected voltage ranges:\n");
 	for (int i = 0; i < 512; i += 2)
 	{
 		NIDAQ::float64 vmin = data[i];
 		NIDAQ::float64 vmax = data[i + 1];
 		if (int(vmin) == int(vmax)) 
 			break;
-		printf("Vmin: %f Vmax: %f \n", vmin, vmax);
+		//printf("Vmin: %f Vmax: %f \n", vmin, vmax);
 		aiVRanges.add(VRange(vmin, vmax));
 	}
 
@@ -241,7 +293,7 @@ void NIDAQmx::getDIChannels()
 	//NIDAQ::DAQmxGetDevTerminals(STR2CHR(deviceName), &data[0], sizeof(data)); //gets all terminals
 	//NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &data[0], sizeof(data));	//gets line name
 	NIDAQ::DAQmxGetDevDILines(STR2CHR(deviceName), &data[0], sizeof(data));	//gets ports on line
-	printf("Found digital inputs: \n");
+	//printf("Found digital inputs: \n");
 
 	StringArray channel_list;
 	channel_list.addTokens(&data[0], ", ", "\"");
@@ -252,12 +304,46 @@ void NIDAQmx::getDIChannels()
 		channel_type.addTokens(channel_list[i], "/", "\"");
 		if (channel_list[i].length() > 0)
 		{
-			printf("%s\n", channel_list[i].toUTF8());
+			//printf("%s\n", channel_list[i].toUTF8());
 			di.add(DigitalIn(channel_list[i].toUTF8()));
+			diChannelEnabled.add(false);
 		}
 	}
 
 	fflush(stdout);
+
+}
+
+int NIDAQmx::getActiveDigitalLines()
+{
+	uint16 linesEnabled = 0;
+	for (int i = 0; i < diChannelEnabled.size(); i++)
+	{
+		if (diChannelEnabled[i])
+			linesEnabled += pow(2, i);
+	}
+
+	printf("Size: %d, State: %d\n", diChannelEnabled.size(), linesEnabled);
+	return linesEnabled;
+}
+
+void NIDAQmx::toggleSourceType(int index)
+{
+
+	SOURCE_TYPE type = st[index];
+
+	switch (type) {
+	case SOURCE_TYPE::GROUND_REF:
+		st.set(index, SOURCE_TYPE::FLOATING); break;
+	case SOURCE_TYPE::FLOATING:
+		st.set(index, SOURCE_TYPE::GROUND_REF); break;
+	case SOURCE_TYPE::DIFFERENTIAL:
+		st.set(index, SOURCE_TYPE::SINGLE_ENDED); break;
+	case SOURCE_TYPE::SINGLE_ENDED:
+		st.set(index, SOURCE_TYPE::DIFFERENTIAL); break;
+	default:
+		break;
+	}
 
 }
 
@@ -321,11 +407,11 @@ void NIDAQmx::run()
 	char lineName[2048];
 	NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &lineName[0], sizeof(lineName));
 
-	/* Create a digital input task */
+	/* Create a digital input task using device serial number to gurantee unique task name per device */
 	if (isUSBDevice)
-		DAQmxErrChk(NIDAQ::DAQmxCreateTask("DITask_USB", &taskHandleDI));
+		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_USB"+getSerialNumber()), &taskHandleDI));
 	else
-		DAQmxErrChk(NIDAQ::DAQmxCreateTask("DITask_PXI", &taskHandleDI));
+		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_PXI"+getSerialNumber()), &taskHandleDI));
 
 	/* Create a channel for each digital input */
 	DAQmxErrChk(NIDAQ::DAQmxCreateDIChan(
@@ -346,6 +432,8 @@ void NIDAQmx::run()
 														//If sampleMode == DAQmx_Val_FiniteSamps : # of samples to acquire for each channel
 														//Elif sampleMode == DAQmx_Val_ContSamps : circular buffer size
 
+	DAQmxErrChk(NIDAQ::DAQmxTaskControl(taskHandleAI, DAQmx_Val_Task_Commit));
+	DAQmxErrChk(NIDAQ::DAQmxTaskControl(taskHandleDI, DAQmx_Val_Task_Commit));
 
 	DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleDI));
 	DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleAI));
@@ -354,10 +442,12 @@ void NIDAQmx::run()
 	if (isUSBDevice)
 		numSampsPerChan = 100;
 	else
-		numSampsPerChan = 1000;
+		numSampsPerChan = CHANNEL_BUFFER_SIZE;
 
 	NIDAQ::int32 arraySizeInSamps = ai.size() * numSampsPerChan;
 	NIDAQ::float64 timeout = 5.0;
+
+	uint64 linesEnabled = 0;
 
 	while (!threadShouldExit())
 	{
@@ -366,7 +456,7 @@ void NIDAQmx::run()
 			taskHandleAI,
 			numSampsPerChan,
 			timeout,
-			DAQmx_Val_GroupByScanNumber,
+			DAQmx_Val_GroupByScanNumber, //DAQmx_Val_GroupByScanNumber
 			ai_data,
 			arraySizeInSamps,
 			&ai_read,
@@ -393,6 +483,7 @@ void NIDAQmx::run()
 				&di_read,
 				NULL));
 
+		/*
 		std::chrono::milliseconds last_time;
 		std::chrono::milliseconds t = std::chrono::duration_cast< std::chrono::milliseconds >(
 			std::chrono::system_clock::now().time_since_epoch());
@@ -403,28 +494,27 @@ void NIDAQmx::run()
 			printf("Acquired %d DI samples. Total %d\n", (int)di_read, (int)(totalDIRead += di_read));
 			fflush(stdout);
 		}
+		*/
 
-		float aiSamples[MAX_ANALOG_CHANNELS] = { 0 };
-		uint64 linesEnabled = 0;
+		float aiSamples[MAX_ANALOG_CHANNELS];
 		int count = 0;
 		for (int i = 0; i < arraySizeInSamps; i++)
 		{
+	
 			int channel = i % MAX_ANALOG_CHANNELS;
 
-			// Turn input signals on/off on the fly
+			aiSamples[channel] = 0;
 			if (aiChannelEnabled[channel])
 				aiSamples[channel] = ai_data[i];
-
-			if (diChannelEnabled[channel])
-				linesEnabled = linesEnabled | (1 << channel);
 
 			if (i % MAX_ANALOG_CHANNELS == 0)
 			{
 				ai_timestamp++;
 				if (isUSBDevice)
-					eventCode = di_data_32[count++] & linesEnabled;
+					eventCode = di_data_32[count++] & getActiveDigitalLines();
 				else
-					eventCode = di_data_8[count++] & linesEnabled;
+					eventCode = di_data_8[count++] & getActiveDigitalLines();
+
 				aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &eventCode, 1);
 			}
 
@@ -491,16 +581,53 @@ AnalogIn::AnalogIn()
 {
 }
 
-AnalogIn::AnalogIn(String id) : InputChannel(id)
+AnalogIn::AnalogIn(String id, NIDAQ::int32 category) : InputChannel(id)
 {
-	voltageRange = VRange(-5, 5);
+	//printf("New analog input w/ category: %d\n", category);
+	if (category == 14644) // PXI-6133 BNC-2110
+	{
+		sourceType = SOURCE_TYPE::SINGLE_ENDED;
+	}
+	else if (category == 14646) // USB-6001
+	{
+		sourceType = SOURCE_TYPE::FLOATING;
+	}
+	else
+	{
+		sourceType = SOURCE_TYPE::FLOATING;
+	}
 }
 
 void AnalogIn::setVoltageRange(VRange range)
 {
 	voltageRange = range;
+	printf("Set voltage range: \n");
 }
 
+SOURCE_TYPE AnalogIn::getSourceType()
+{
+	return sourceType;
+}
+
+void AnalogIn::setSourceType()
+{
+
+	printf("AnalogIn::setSourceType() [start]: %d\n", sourceType);
+	switch (sourceType) {
+	case SOURCE_TYPE::GROUND_REF:
+		this->sourceType = SOURCE_TYPE::FLOATING; break;
+	case SOURCE_TYPE::FLOATING:
+		this->sourceType = SOURCE_TYPE::GROUND_REF; break;
+	case SOURCE_TYPE::DIFFERENTIAL:
+		this->sourceType = SOURCE_TYPE::SINGLE_ENDED; break;
+	case SOURCE_TYPE::SINGLE_ENDED:
+		this->sourceType = SOURCE_TYPE::DIFFERENTIAL; break;
+	default:
+		break;
+	}
+	printf("AnalogIn::setSourceType() [end]: %d\n", this->sourceType);
+
+}
 
 AnalogIn::~AnalogIn()
 {
