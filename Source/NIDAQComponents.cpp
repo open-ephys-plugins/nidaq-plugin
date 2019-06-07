@@ -95,6 +95,8 @@ String NIDAQmxDeviceManager::getDeviceFromProductName(String productName)
 		if (n->getProductName() == productName)
 			return device;
 	}
+	return "";
+
 }
 
 int NIDAQmxDeviceManager::getNumAvailableDevices()

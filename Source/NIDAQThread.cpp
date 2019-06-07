@@ -108,18 +108,26 @@ String NIDAQThread::getProductName() const
 
 int NIDAQThread::swapConnection(String productName)
 {
-	mNIDAQ = new NIDAQmx(STR2CHR(dm->getDeviceFromProductName(productName)));
-	sourceBuffers.removeLast();
-	sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
-	mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
-	sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
-	setSampleRate(sampleRateIndex);
+	if (!dm->getDeviceFromProductName(productName).isEmpty())
+	{
+		mNIDAQ = new  NIDAQmx(STR2CHR(dm->getDeviceFromProductName(productName)));
 
-	voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
-	setVoltageRange(voltageRangeIndex);
+		printf("MADE IT HERE\n");
+		sourceBuffers.removeLast();
+		sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
+		mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
-	return 0;
+		sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+		setSampleRate(sampleRateIndex);
+
+		voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
+		setVoltageRange(voltageRangeIndex);
+
+		return 0;
+	}
+	return 1;
+
 }
 
 void NIDAQThread::toggleSourceType(int id)

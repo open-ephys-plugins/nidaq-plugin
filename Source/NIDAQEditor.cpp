@@ -29,108 +29,113 @@ EditorBackground::EditorBackground(int nAI, int nDI) : nAI(nAI), nDI(nDI) {}
 void EditorBackground::paint(Graphics& g)
 {
 
-	/* Draw AI channels */
-	int maxChannelsPerColumn = 4;
-	int aiChannelsPerColumn = nAI > 0 && nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;
-	int diChannelsPerColumn = nDI > 0 && nDI < maxChannelsPerColumn ? nDI : maxChannelsPerColumn;
-
-	float aiChanOffsetX = 15; //pixels
-	float aiChanOffsetY = 12; //pixels
-	float aiChanWidth = 70;   //pixels
-	float aiChanHeight = 22;  //pixels TODO: normalize
-	float paddingX = 1.07;
-	float paddingY = 1.18;
-
-	for (int i = 0; i < nAI; i++)
+	if (nAI > 0 || nDI > 0)
 	{
 
-		int colIndex = i / aiChannelsPerColumn;
-		int rowIndex = i % aiChannelsPerColumn;
+		/* Draw AI channels */
+		int maxChannelsPerColumn = 4;
+		int aiChannelsPerColumn = nAI > 0 && nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;
+		int diChannelsPerColumn = nDI > 0 && nDI < maxChannelsPerColumn ? nDI : maxChannelsPerColumn;
 
-		g.setColour(Colours::lightgrey);
-		g.drawRoundedRectangle(
-			aiChanOffsetX + paddingX * colIndex * aiChanWidth,
-			aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
-			aiChanWidth, aiChanHeight, 4, 3);
+		float aiChanOffsetX = 15; //pixels
+		float aiChanOffsetY = 12; //pixels
+		float aiChanWidth = 70;   //pixels
+		float aiChanHeight = 22;  //pixels TODO: normalize
+		float paddingX = 1.07;
+		float paddingY = 1.18;
 
-		
-		g.setColour(Colours::darkgrey);
+		for (int i = 0; i < nAI; i++)
+		{
 
-		g.drawRoundedRectangle(
-			aiChanOffsetX + paddingX * colIndex * aiChanWidth,
-			aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
-			aiChanWidth, aiChanHeight, 4, 1);
+			int colIndex = i / aiChannelsPerColumn;
+			int rowIndex = i % aiChannelsPerColumn;
 
-		/*
-		g.drawRoundedRectangle(
+			g.setColour(Colours::lightgrey);
+			g.drawRoundedRectangle(
+				aiChanOffsetX + paddingX * colIndex * aiChanWidth,
+				aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
+				aiChanWidth, aiChanHeight, 4, 3);
+
+
+			g.setColour(Colours::darkgrey);
+
+			g.drawRoundedRectangle(
+				aiChanOffsetX + paddingX * colIndex * aiChanWidth,
+				aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
+				aiChanWidth, aiChanHeight, 4, 1);
+
+			/*
+			g.drawRoundedRectangle(
 			aiChanOffsetX + colIndex * paddingX * aiChanWidth + aiChanWidth - aiChanWidth / 3,
 			16 + paddingY * aiChanHeight * rowIndex,
 			aiChanWidth / 3 - 4, 14, 1, 0.4);
-		*/
+			*/
 
-		g.setFont(10);
-		g.drawText(
-			String("AI") + String(i),
-			5 + aiChanOffsetX + paddingX * colIndex * aiChanWidth,
-			7 + aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
-			20, 10, Justification::centredLeft);
+			g.setFont(10);
+			g.drawText(
+				String("AI") + String(i),
+				5 + aiChanOffsetX + paddingX * colIndex * aiChanWidth,
+				7 + aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
+				20, 10, Justification::centredLeft);
 
-		/*
-		g.drawText(String("FS"),
+			/*
+			g.drawText(String("FS"),
 			51 + aiChanOffsetX + paddingX * colIndex * aiChanWidth,
 			7 + aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
 			20, 10, Justification::centredLeft);
-		*/
+			*/
 
-	}
+		}
 
-	/* Draw DI lines */
-	float diChanOffsetX = aiChanOffsetX + ((nAI % maxChannelsPerColumn == 0 ? 0 : 1) + nAI / aiChannelsPerColumn) * paddingX * aiChanWidth;
-	float diChanOffsetY = aiChanOffsetY;
-	float diChanWidth = 42;
-	float diChanHeight = 22;
+		/* Draw DI lines */
+		float diChanOffsetX = aiChanOffsetX + ((nAI % maxChannelsPerColumn == 0 ? 0 : 1) + nAI / aiChannelsPerColumn) * paddingX * aiChanWidth;
+		float diChanOffsetY = aiChanOffsetY;
+		float diChanWidth = 42;
+		float diChanHeight = 22;
 
-	for (int i = 0; i < nDI; i++)
-	{
+		for (int i = 0; i < nDI; i++)
+		{
 
-		int colIndex = i / diChannelsPerColumn;
-		int rowIndex = i % diChannelsPerColumn;
+			int colIndex = i / diChannelsPerColumn;
+			int rowIndex = i % diChannelsPerColumn;
 
-		g.setColour(Colours::lightgrey);
-		g.drawRoundedRectangle(
-			diChanOffsetX + paddingX * colIndex * diChanWidth,
-			diChanOffsetY + paddingY * rowIndex * diChanHeight,
-			diChanWidth, diChanHeight, 4, 3);
+			g.setColour(Colours::lightgrey);
+			g.drawRoundedRectangle(
+				diChanOffsetX + paddingX * colIndex * diChanWidth,
+				diChanOffsetY + paddingY * rowIndex * diChanHeight,
+				diChanWidth, diChanHeight, 4, 3);
+
+			g.setColour(Colours::darkgrey);
+			g.drawRoundedRectangle(
+				diChanOffsetX + paddingX * colIndex * diChanWidth,
+				diChanOffsetY + paddingY * rowIndex * diChanHeight,
+				diChanWidth, diChanHeight, 4, 1);
+
+			g.setFont(10);
+			if (i >= 10)
+				g.setFont(8);
+			g.drawText(
+				"DI" + String(i),
+				5 + diChanOffsetX + paddingX * colIndex * diChanWidth,
+				7 + diChanOffsetY + paddingY * rowIndex * diChanHeight,
+				20, 10, Justification::centredLeft);
+
+		}
+
+		//FIFO monitor label
+		float settingsOffsetX = diChanOffsetX + ((nDI % maxChannelsPerColumn == 0 ? 0 : 1) + nDI / diChannelsPerColumn) * paddingX * diChanWidth + 5;
+		g.setFont(8);
+		g.drawText(String("0"), settingsOffsetX, 100, 50, 10, Justification::centredLeft);
+		g.drawText(String("100"), settingsOffsetX + 65, 100, 50, 10, Justification::centredLeft);
+		g.drawText(String("%"), settingsOffsetX + 33, 100, 50, 10, Justification::centredLeft);
 
 		g.setColour(Colours::darkgrey);
-		g.drawRoundedRectangle(
-			diChanOffsetX + paddingX * colIndex * diChanWidth,
-			diChanOffsetY + paddingY * rowIndex * diChanHeight,
-			diChanWidth, diChanHeight, 4, 1);
-
 		g.setFont(10);
-		if ( i >= 10 )
-			g.setFont(8);
-		g.drawText(
-			"DI" + String(i),
-			5 + diChanOffsetX + paddingX * colIndex * diChanWidth,
-			7 + diChanOffsetY + paddingY * rowIndex * diChanHeight,
-			20, 10, Justification::centredLeft);
+		g.drawText(String("SAMPLE RATE"), settingsOffsetX, 13, 100, 10, Justification::centredLeft);
+		g.drawText(String("AI VOLTAGE RANGE"), settingsOffsetX, 45, 100, 10, Justification::centredLeft);
+		g.drawText(String("USAGE"), settingsOffsetX, 77, 100, 10, Justification::centredLeft);
 
 	}
-
-	//FIFO monitor label
-	float settingsOffsetX = diChanOffsetX + ((nDI % maxChannelsPerColumn == 0 ? 0 : 1) + nDI / diChannelsPerColumn) * paddingX * diChanWidth + 5;
-	g.setFont(8);
-	g.drawText(String("0"), settingsOffsetX, 100, 50, 10, Justification::centredLeft);
-	g.drawText(String("100"), settingsOffsetX + 65, 100, 50, 10, Justification::centredLeft);
-	g.drawText(String("%"), settingsOffsetX + 33, 100, 50, 10, Justification::centredLeft);
-
-	g.setColour(Colours::darkgrey);
-	g.setFont(10);
-	g.drawText(String("SAMPLE RATE"), settingsOffsetX, 13, 100, 10, Justification::centredLeft);
-	g.drawText(String("AI VOLTAGE RANGE"), settingsOffsetX, 45, 100, 10, Justification::centredLeft);
-	g.drawText(String("USAGE"), settingsOffsetX, 77, 100, 10, Justification::centredLeft);
 
 }
 
@@ -524,6 +529,6 @@ void NIDAQEditor::saveCustomParameters(XmlElement* xml)
 void NIDAQEditor::loadCustomParameters(XmlElement* xml)
 {
 	String productName = xml->getStringAttribute("productName", "NIDAQmx");
-	thread->swapConnection(productName);
-	draw();
+	if (!thread->swapConnection(productName));
+		draw();
 }
