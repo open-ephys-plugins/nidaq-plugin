@@ -26,7 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "NIDAQComponents.h"
 
-/** NIDAQmx static function necessary for syncing analog + digital inputs */
 static int32 GetTerminalNameWithDevPrefix(NIDAQ::TaskHandle taskHandle, const char terminalName[], char triggerName[]);
 
 static int32 GetTerminalNameWithDevPrefix(NIDAQ::TaskHandle taskHandle, const char terminalName[], char triggerName[])
@@ -147,12 +146,12 @@ NIDAQmx::NIDAQmx(const char* deviceName)
 	// Default to largest voltage range
 	voltageRange = aiVRanges[aiVRanges.size() - 1];
 
-	// Disable all channels by default
+	// Enable all channels by default
 	for (int i = 0; i < aiChannelEnabled.size(); i++)
-		aiChannelEnabled.set(i, false);
+		aiChannelEnabled.set(i, true);
 
 	for (int i = 0; i < diChannelEnabled.size(); i++)
-		diChannelEnabled.set(i, false);
+		diChannelEnabled.set(i, true);
 
 }
 
@@ -215,53 +214,41 @@ void NIDAQmx::getAIChannels()
 	{
 		if (channel_list[i].length() > 0)
 		{
-			//printf("%s\n", channel_list[i].toUTF8());
-			ai.add(AnalogIn(channel_list[i].toUTF8(), deviceCategory));
 
 			/* Get channel termination */
-			NIDAQ::int32 data;
-			NIDAQ::DAQmxGetPhysicalChanAITermCfgs(STR2CHR(ai[i].id), &data);
+			NIDAQ::int32 termCfgs;
+			NIDAQ::DAQmxGetPhysicalChanAITermCfgs(channel_list[i].toUTF8(), &termCfgs);
 
-			/* Get channel input sources */
-			char pn[2048];
-			NIDAQ::DAQmxGetPhysicalChanAIInputSrcs(STR2CHR(ai[i].id), &pn[0], sizeof(pn));
+			printf("%s - ", channel_list[i].toUTF8());
+			printf("Terminal Config: %d\n", termCfgs);
 
-			printf("Terminal Config: %d\n", data);
+			ai.add(AnalogIn(channel_list[i].toUTF8()));
 
-			if (data & DAQmx_Val_Bit_TermCfg_RSE)
+			terminalConfig.add(termCfgs);
+
+			if (termCfgs & DAQmx_Val_Bit_TermCfg_RSE)
 			{
-				printf("RSE\n");
+				st.add(SOURCE_TYPE::RSE);
 			}
-			if (data & DAQmx_Val_Bit_TermCfg_NRSE)
+			else if (termCfgs & DAQmx_Val_Bit_TermCfg_NRSE)
 			{
-				printf("NRSE\n");
+				st.add(SOURCE_TYPE::NRSE);
 			}
-			if (data & DAQmx_Val_Bit_TermCfg_Diff)
+			else if (termCfgs & DAQmx_Val_Bit_TermCfg_Diff)
 			{
-				printf("Diff\n");
+				st.add(SOURCE_TYPE::DIFF);
 			}
-			if (data & DAQmx_Val_Bit_TermCfg_PseudoDIFF)
+			else 
 			{
-				printf("PseudoDiff\n");
+				st.add(SOURCE_TYPE::PSEUDO_DIFF);
 			}
 
-			if (deviceCategory == 14644) // PXI-6133 BNC-2110
-			{
-				st.add(SOURCE_TYPE::SINGLE_ENDED);
-			}
-			else if (deviceCategory == 14646) // USB-6001
-			{
-				st.add(SOURCE_TYPE::FLOATING);
-			}
-			else
-			{
-				st.add(SOURCE_TYPE::FLOATING);
-				//TODO: Untested devices assume floating input...
-				//Find NidaqAPI call that can check valid source types per device
-			}
-			aiChannelEnabled.add(false);
+			aiChannelEnabled.add(true);
+
 		}
 	}
+
+	printf("\n");
 
 	fflush(stdout);
 
@@ -324,28 +311,18 @@ int NIDAQmx::getActiveDigitalLines()
 		if (diChannelEnabled[i])
 			linesEnabled += pow(2, i);
 	}
-
-	printf("Size: %d, State: %d\n", diChannelEnabled.size(), linesEnabled);
 	return linesEnabled;
 }
 
 void NIDAQmx::toggleSourceType(int index)
 {
 
-	SOURCE_TYPE type = st[index];
-
-	switch (type) {
-	case SOURCE_TYPE::GROUND_REF:
-		st.set(index, SOURCE_TYPE::FLOATING); break;
-	case SOURCE_TYPE::FLOATING:
-		st.set(index, SOURCE_TYPE::GROUND_REF); break;
-	case SOURCE_TYPE::DIFFERENTIAL:
-		st.set(index, SOURCE_TYPE::SINGLE_ENDED); break;
-	case SOURCE_TYPE::SINGLE_ENDED:
-		st.set(index, SOURCE_TYPE::DIFFERENTIAL); break;
-	default:
-		break;
-	}
+	SOURCE_TYPE current = st[index];
+	int next = (static_cast<int>(current)+1) % NUM_SOURCE_TYPES;
+	SOURCE_TYPE source = static_cast<SOURCE_TYPE>(next);
+	while (!((1 << next) & terminalConfig[index]))
+		source = static_cast<SOURCE_TYPE>(++next % NUM_SOURCE_TYPES);
+	st.set(index,source);
 
 }
 
@@ -370,17 +347,36 @@ void NIDAQmx::run()
 	else
 		DAQmxErrChk(NIDAQ::DAQmxCreateTask("AITask_PXI", &taskHandleAI));
 
+
 	/* Create a voltage channel for each analog input */
 	for (int i = 0; i < ai.size(); i++)
-		DAQmxErrChk (NIDAQ::DAQmxCreateAIVoltageChan(
-		taskHandleAI,					//task handle
+	{
+		NIDAQ::int32 termConfig;
+
+		switch (st[i]) {
+		case SOURCE_TYPE::RSE:
+			termConfig = DAQmx_Val_RSE;
+		case SOURCE_TYPE::NRSE:
+			termConfig = DAQmx_Val_NRSE;
+		case SOURCE_TYPE::DIFF:
+			termConfig = DAQmx_Val_Diff;
+		case SOURCE_TYPE::PSEUDO_DIFF:
+			termConfig = DAQmx_Val_PseudoDiff;
+		default:
+			termConfig = DAQmx_Val_Cfg_Default;
+		}
+
+		DAQmxErrChk(NIDAQ::DAQmxCreateAIVoltageChan(
+			taskHandleAI,					//task handle
 			STR2CHR(ai[i].id),			//NIDAQ physical channel name (e.g. dev1/ai1)
 			"",							//user-defined channel name (optional)
-			DAQmx_Val_Cfg_Default,		//input terminal configuration
+			termConfig,					//input terminal configuration
 			voltageRange.vmin,			//min input voltage
 			voltageRange.vmax,			//max input voltage
 			DAQmx_Val_Volts,			//voltage units
 			NULL));
+
+	}
 
 	/* Configure sample clock timing */
 	DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
@@ -583,52 +579,9 @@ AnalogIn::AnalogIn()
 {
 }
 
-AnalogIn::AnalogIn(String id, NIDAQ::int32 category) : InputChannel(id)
+AnalogIn::AnalogIn(String id) : InputChannel(id)
 {
-	//printf("New analog input w/ category: %d\n", category);
-	if (category == 14644) // PXI-6133 BNC-2110
-	{
-		sourceType = SOURCE_TYPE::SINGLE_ENDED;
-	}
-	else if (category == 14646) // USB-6001
-	{
-		sourceType = SOURCE_TYPE::FLOATING;
-	}
-	else
-	{
-		sourceType = SOURCE_TYPE::FLOATING;
-	}
-}
-
-void AnalogIn::setVoltageRange(VRange range)
-{
-	voltageRange = range;
-	printf("Set voltage range: \n");
-}
-
-SOURCE_TYPE AnalogIn::getSourceType()
-{
-	return sourceType;
-}
-
-void AnalogIn::setSourceType()
-{
-
-	printf("AnalogIn::setSourceType() [start]: %d\n", sourceType);
-	switch (sourceType) {
-	case SOURCE_TYPE::GROUND_REF:
-		this->sourceType = SOURCE_TYPE::FLOATING; break;
-	case SOURCE_TYPE::FLOATING:
-		this->sourceType = SOURCE_TYPE::GROUND_REF; break;
-	case SOURCE_TYPE::DIFFERENTIAL:
-		this->sourceType = SOURCE_TYPE::SINGLE_ENDED; break;
-	case SOURCE_TYPE::SINGLE_ENDED:
-		this->sourceType = SOURCE_TYPE::DIFFERENTIAL; break;
-	default:
-		break;
-	}
-	printf("AnalogIn::setSourceType() [end]: %d\n", this->sourceType);
-
+	
 }
 
 AnalogIn::~AnalogIn()

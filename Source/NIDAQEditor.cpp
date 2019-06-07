@@ -124,16 +124,19 @@ void EditorBackground::paint(Graphics& g)
 
 		//FIFO monitor label
 		float settingsOffsetX = diChanOffsetX + ((nDI % maxChannelsPerColumn == 0 ? 0 : 1) + nDI / diChannelsPerColumn) * paddingX * diChanWidth + 5;
-		g.setFont(8);
-		g.drawText(String("0"), settingsOffsetX, 100, 50, 10, Justification::centredLeft);
-		g.drawText(String("100"), settingsOffsetX + 65, 100, 50, 10, Justification::centredLeft);
-		g.drawText(String("%"), settingsOffsetX + 33, 100, 50, 10, Justification::centredLeft);
-
 		g.setColour(Colours::darkgrey);
 		g.setFont(10);
 		g.drawText(String("SAMPLE RATE"), settingsOffsetX, 13, 100, 10, Justification::centredLeft);
 		g.drawText(String("AI VOLTAGE RANGE"), settingsOffsetX, 45, 100, 10, Justification::centredLeft);
+
+		/*
 		g.drawText(String("USAGE"), settingsOffsetX, 77, 100, 10, Justification::centredLeft);
+		g.setFont(8);
+		g.drawText(String("0"), settingsOffsetX, 100, 50, 10, Justification::centredLeft);
+		g.drawText(String("100"), settingsOffsetX + 65, 100, 50, 10, Justification::centredLeft);
+		g.drawText(String("%"), settingsOffsetX + 33, 100, 50, 10, Justification::centredLeft);
+		*/
+
 
 	}
 
@@ -169,7 +172,7 @@ void FifoMonitor::paint(Graphics& g)
 	g.fillRoundedRectangle(2, this->getHeight() - 2 - barHeight, this->getWidth() - 4, barHeight, 2);
 }
 
-AIButton::AIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(false)
+AIButton::AIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(true)
 {
 	startTimer(500);
 }
@@ -220,7 +223,7 @@ void AIButton::timerCallback()
 
 }
 
-DIButton::DIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(false)
+DIButton::DIButton(int id_, NIDAQThread* thread_) : id(id_), thread(thread_), enabled(true)
 {
 	startTimer(500);
 }
@@ -293,14 +296,14 @@ int SourceTypeButton::getId()
 void SourceTypeButton::update(SOURCE_TYPE sourceType)
 {
 	switch (sourceType) {
-	case SOURCE_TYPE::GROUND_REF:
-		setButtonText("GS"); return;
-	case SOURCE_TYPE::FLOATING:
-		setButtonText("FS"); return;
-	case SOURCE_TYPE::DIFFERENTIAL:
-		setButtonText("DF"); return;
-	case SOURCE_TYPE::SINGLE_ENDED:
-		setButtonText("SE"); return;
+	case SOURCE_TYPE::RSE:
+		setButtonText("RSE"); return;
+	case SOURCE_TYPE::NRSE:
+		setButtonText("NRSE"); return;
+	case SOURCE_TYPE::DIFF:
+		setButtonText("DIFF"); return;
+	case SOURCE_TYPE::PSEUDO_DIFF:
+		setButtonText("PDIF"); return;
 	default:
 		break;
 	}
@@ -375,7 +378,7 @@ void NIDAQEditor::draw()
 		printf("Got source type for input %d: %d\n", i, sourceType);
 
 		SourceTypeButton* b = new SourceTypeButton(i, thread, sourceType);
-		b->setBounds(xOffset+20, y_pos, 20, 15);
+		b->setBounds(xOffset+18, y_pos-2, 26, 17);
 		b->addListener(this);
 		addAndMakeVisible(b);
 		sourceTypeButtons.add(b);
@@ -427,7 +430,7 @@ void NIDAQEditor::draw()
 
 	fifoMonitor = new FifoMonitor(thread);
 	fifoMonitor->setBounds(xOffset + 2, 105, 70, 12);
-	addAndMakeVisible(fifoMonitor);
+	//addAndMakeVisible(fifoMonitor);
 
 	if (t->getNumAvailableDevices() > 1)
 	{
@@ -502,11 +505,8 @@ void NIDAQEditor::buttonEvent(Button* button)
 	}
 	else if (sourceTypeButtons.contains((SourceTypeButton*)button))
 	{
-		SOURCE_TYPE sourceType = thread->getSourceTypeForInput(((SourceTypeButton*)button)->getId());
 		thread->toggleSourceType(((SourceTypeButton*)button)->getId());
-		sourceType = thread->getSourceTypeForInput(((SourceTypeButton*)button)->getId());
-		((SourceTypeButton*)button)->update(sourceType);
-		fflush(stdout);
+		((SourceTypeButton*)button)->update(thread->getSourceTypeForInput(((SourceTypeButton*)button)->getId()));
 	}
 	else if (button == swapDeviceButton)
 	{

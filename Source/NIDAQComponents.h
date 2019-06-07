@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nidaq-api/NIDAQmx.h"
 
+#define NUM_SOURCE_TYPES 4
 #define CHANNEL_BUFFER_SIZE 1000
 #define MAX_ANALOG_CHANNELS 8
 #define ERR_BUFF_SIZE 2048
@@ -90,10 +91,10 @@ struct VRange {
 };
 
 enum SOURCE_TYPE {
-	FLOATING = 0,
-	GROUND_REF,
-	SINGLE_ENDED,
-	DIFFERENTIAL
+	RSE = 0,
+	NRSE,
+	DIFF,
+	PSEUDO_DIFF
 };
 
 class NIDAQmx : public Thread
@@ -124,27 +125,28 @@ public:
 
 private:
 
-	String deviceName;
-	String productName;
-	NIDAQ::int32 deviceCategory;
-	NIDAQ::uInt32 productNum;
-	NIDAQ::uInt32 serialNum;
+	String				deviceName;
+	String				productName;
+	NIDAQ::int32		deviceCategory;
+	NIDAQ::uInt32		productNum;
+	NIDAQ::uInt32		serialNum;
+	bool				isUSBDevice;
+	bool				simAISamplingSupported;
+	float				adcResolution;
 
-	bool isUSBDevice;
-	bool simAISamplingSupported;
+	Array<VRange>		aiVRanges;
+	VRange				voltageRange;
 
-	float adcResolution;
-	Array<float> sampleRates;
-	Array<VRange> aiVRanges;
-
-	float samplerate;
-	VRange voltageRange;
-	Array<bool> aiChannelEnabled;
-	Array<bool> diChannelEnabled;
+	Array<float>		sampleRates;
+	float				samplerate;
 
 	Array<AnalogIn> 	ai;
+	Array<NIDAQ::int32> terminalConfig;
 	Array<SOURCE_TYPE>  st;
+	Array<bool>			aiChannelEnabled;
+
 	Array<DigitalIn> 	di;
+	Array<bool>			diChannelEnabled;
 
 	NIDAQ::float64		ai_data[CHANNEL_BUFFER_SIZE * MAX_ANALOG_CHANNELS];
 	NIDAQ::uInt8		di_data_8[CHANNEL_BUFFER_SIZE];  //PXI devices use 8-bit read
@@ -193,18 +195,13 @@ class AnalogIn : public InputChannel
 
 public:
 	AnalogIn();
-	AnalogIn(String id, NIDAQ::int32 category);
+	AnalogIn(String id);
 	~AnalogIn();
 
-	void setVoltageRange(VRange range);
-	void setSourceType();
-	SOURCE_TYPE getSourceType();
-
-	friend class NIDAQmx;
+	Array<SOURCE_TYPE> getTerminalConfig();
 
 private:
-	SOURCE_TYPE sourceType;
-	VRange voltageRange;
+	NIDAQ::int32 terminalConfig;
 };
 
 class DigitalIn : public InputChannel
