@@ -250,12 +250,20 @@ bool NIDAQThread::stopAcquisition()
 
 void NIDAQThread::setDefaultChannelNames()
 {
-	//TODO:
+
+	for (int i = 0; i < getNumAnalogInputs(); i++)
+	{
+		ChannelCustomInfo info;
+		info.name = "AI" + String(i + 1);
+		info.gain = getAdcBitVolts();
+		channelInfo.set(i, info);
+	}
+
 }
 
 bool NIDAQThread::usesCustomNames() const
 {
-	return false;
+	return true;
 }
 
 /** Returns the number of virtual subprocessors this source can generate */
@@ -299,6 +307,27 @@ float NIDAQThread::getBitVolts(const DataChannel* chan) const
 	float vmax = mNIDAQ->voltageRange.vmax;
 
 	return (vmax - vmin) / pow(2, mNIDAQ->adcResolution);
+
+}
+
+float NIDAQThread::getAdcBitVolts()
+{
+
+	float vmin = mNIDAQ->voltageRange.vmin;
+	float vmax = mNIDAQ->voltageRange.vmax;
+
+	int adcResolution;
+
+	if (mNIDAQ->getProductName() == "USB-6001")
+	{
+		adcResolution = 14;
+	}
+	else if (mNIDAQ->getProductName() == "PXI-6133")
+	{
+		adcResolution = 14;
+	}
+
+	return (vmax - vmin) / pow(2, adcResolution);
 
 }
 
