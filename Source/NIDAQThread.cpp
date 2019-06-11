@@ -23,6 +23,7 @@
 
 #include "NIDAQThread.h"
 #include "NIDAQEditor.h"
+#include <stdexcept>
 
 DataThread* NIDAQThread::createDataThread(SourceNode *sn)
 {
@@ -34,9 +35,22 @@ GenericEditor* NIDAQThread::createEditor(SourceNode* sn)
     return new NIDAQEditor(sn, this, true);
 }
 
-NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn)
+NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), inputAvailable(false)
 {
+
 	dm = new NIDAQmxDeviceManager();
+
+	dm->scanForDevices();
+
+	if (dm->getNumAvailableDevices() == 0)
+	{
+		throw std::runtime_error("No NIDAQ devices detected!");
+	}
+
+	inputAvailable = true;
+
+	openConnection();
+
 }
 
 NIDAQThread::~NIDAQThread()
@@ -46,32 +60,19 @@ NIDAQThread::~NIDAQThread()
 int NIDAQThread::openConnection()
 {
 
-	inputAvailable = false;
+	mNIDAQ = new NIDAQmx(STR2CHR(dm->getDeviceFromIndex(0)));
 
-	dm->scanForDevices();
+	sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
 
-	if (dm->getNumAvailableDevices() == 0)
-	{
-		return 1;
-	}
-	else
-	{
-		inputAvailable = true;
+	mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
-		mNIDAQ = new NIDAQmx(STR2CHR(dm->getDeviceFromIndex(0)));
+	sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+	setSampleRate(sampleRateIndex);
 
-		sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
+	voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
+	setVoltageRange(voltageRangeIndex);
 
-		mNIDAQ->aiBuffer = sourceBuffers.getLast();
-
-		sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
-		setSampleRate(sampleRateIndex);
-
-		voltageRangeIndex = mNIDAQ->aiVRanges.size() - 1;
-		setVoltageRange(voltageRangeIndex);
-
-		return 0;
-	}
+	return 0;
 
 }
 
@@ -113,7 +114,6 @@ int NIDAQThread::swapConnection(String productName)
 	{
 		mNIDAQ = new  NIDAQmx(STR2CHR(dm->getDeviceFromProductName(productName)));
 
-		printf("MADE IT HERE\n");
 		sourceBuffers.removeLast();
 		sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
 		mNIDAQ->aiBuffer = sourceBuffers.getLast();

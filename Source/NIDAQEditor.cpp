@@ -340,7 +340,6 @@ NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useD
 	: GenericEditor(parentNode, useDefaultParameterEditors), thread(t)
 {
 
-	t->openConnection();
 	draw();
 
 }
