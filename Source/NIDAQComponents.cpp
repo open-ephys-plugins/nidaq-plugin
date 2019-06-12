@@ -447,6 +447,9 @@ void NIDAQmx::run()
 
 	uint64 linesEnabled = 0;
 
+	ai_timestamp = 0;
+	eventCode = 0;
+
 	while (!threadShouldExit())
 	{
 
