@@ -201,7 +201,7 @@ Array<String> NIDAQThread::getSampleRates()
 	Array<String> sampleRates;
 	for (auto rate : mNIDAQ->sampleRates)
 	{
-		sampleRates.add(String(rate) + " kS/S");
+		sampleRates.add(String(rate) + " S/s");
 	}
 	return sampleRates;
 }
