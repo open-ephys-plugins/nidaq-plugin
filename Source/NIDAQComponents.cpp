@@ -343,9 +343,9 @@ void NIDAQmx::run()
 
 	/* Create an analog input task */
 	if (isUSBDevice)
-		DAQmxErrChk(NIDAQ::DAQmxCreateTask("AITask_USB", &taskHandleAI));
+		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("AITask_USB" + getSerialNumber()), &taskHandleAI));
 	else
-		DAQmxErrChk(NIDAQ::DAQmxCreateTask("AITask_PXI", &taskHandleAI));
+		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("AITask_PXI" + getSerialNumber()), &taskHandleAI));
 
 
 	/* Create a voltage channel for each analog input */
