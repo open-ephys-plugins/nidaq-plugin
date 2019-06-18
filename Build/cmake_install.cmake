@@ -2,7 +2,7 @@
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files/ni-daq")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/ni-daq")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -35,28 +35,28 @@ endif()
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   if("${CMAKE_INSTALL_CONFIG_NAME}" MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
     list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-     "C:/Users/pavel.kulik/Projects/ni-daq/Builds/../../plugin-GUI/Builds/VisualStudio2013/x64/Debug/bin/plugins/NI-DAQmx.dll")
+     "C:/Users/pavel.kulik/Projects/ni-daq/Builds/../../plugin-GUI/Builds/VisualStudio2013/Debug/bin/plugins/NI-DAQmx.dll")
     if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
         message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
     endif()
     if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
         message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
     endif()
-file(INSTALL DESTINATION "C:/Users/pavel.kulik/Projects/ni-daq/Builds/../../plugin-GUI/Builds/VisualStudio2013/x64/Debug/bin/plugins" TYPE SHARED_LIBRARY FILES "C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/Debug/NI-DAQmx.dll")
+file(INSTALL DESTINATION "C:/Users/pavel.kulik/Projects/ni-daq/Builds/../../plugin-GUI/Builds/VisualStudio2013/Debug/bin/plugins" TYPE SHARED_LIBRARY FILES "C:/Users/pavel.kulik/Projects/ni-daq/Build/Debug/NI-DAQmx.dll")
   endif()
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   if("${CMAKE_INSTALL_CONFIG_NAME}" MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
     list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-     "C:/Users/pavel.kulik/Projects/ni-daq/Builds/../../plugin-GUI/Builds/VisualStudio2013/x64/Release/bin/plugins/NI-DAQmx.dll")
+     "C:/Users/pavel.kulik/Projects/ni-daq/Builds/../../plugin-GUI/Builds/VisualStudio2013/Release/bin/plugins/NI-DAQmx.dll")
     if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
         message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
     endif()
     if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
         message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
     endif()
-file(INSTALL DESTINATION "C:/Users/pavel.kulik/Projects/ni-daq/Builds/../../plugin-GUI/Builds/VisualStudio2013/x64/Release/bin/plugins" TYPE SHARED_LIBRARY FILES "C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/Release/NI-DAQmx.dll")
+file(INSTALL DESTINATION "C:/Users/pavel.kulik/Projects/ni-daq/Builds/../../plugin-GUI/Builds/VisualStudio2013/Release/bin/plugins" TYPE SHARED_LIBRARY FILES "C:/Users/pavel.kulik/Projects/ni-daq/Build/Release/NI-DAQmx.dll")
   endif()
 endif()
 
@@ -68,5 +68,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/pavel.kulik/Projects/ni-daq/Build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

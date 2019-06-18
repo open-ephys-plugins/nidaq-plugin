@@ -1,4 +1,0 @@
-C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/NI-DAQmx.dir
-C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/INSTALL.dir
-C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/ALL_BUILD.dir
-C:/Users/pavel.kulik/Projects/ni-daq/Builds/VS2013/CMakeFiles/ZERO_CHECK.dir

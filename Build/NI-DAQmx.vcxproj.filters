@@ -19,7 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <Filter Include="nidaq-api">
-      <UniqueIdentifier>{8689C5CE-D3FF-3A0B-9106-0632AB917793}</UniqueIdentifier>
+      <UniqueIdentifier>{560261DE-CC3F-34A2-85C6-D3497461CB47}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

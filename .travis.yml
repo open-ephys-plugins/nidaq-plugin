@@ -5,9 +5,11 @@ env:
 script:
   - export PATH=$MSBUILD_PATH:$PATH
   - cd ..
-  - git clone https://github.com/open-ephys/plugin-GUI.git
-  - cd plugin-GUI/Builds/VisualStudio2013
-  - MSBuild.exe open-ephys.sln
+  - git clone -b cmakeBuild https://github.com/aacuevas/plugin-GUI.git
+  - cd plugin-GUI/Build
+  - cmake ..
+  - MSBuild.exe open-ephys.vcxproj /p:WarningLevel=0
   - cd ../../..
-  - cd ni-daq
-  - ./Builds/build.bat
+  - cd ni-daq/
+  - create_build_files.bat
+  - MSBuild.exe ni-daq.vcxproj /p:WarningLevel=0
