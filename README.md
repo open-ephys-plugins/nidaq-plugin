@@ -9,4 +9,6 @@ The NI-DAQ plugin for the Open Ephys GUI adds support for analog and digital inp
   * BNC-2110
 * USB-6001
 
-If you are using a different NI-DAQ device in your setup and can confirm it works and/or has issues, please let us know! 
+If you are using a different NI-DAQ device in your setup and can confirm it works and/or has issues, please let us know!
+ 
+The full module documentation can be found here: https://open-ephys.atlassian.net/wiki/spaces/OEW/pages/1294630913/NIDAQmx+Source+Module
