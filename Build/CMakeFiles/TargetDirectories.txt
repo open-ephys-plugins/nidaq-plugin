@@ -1,4 +1,0 @@
-C:/Users/pavel.kulik/Projects/ni-daq/Build/CMakeFiles/NI-DAQmx.dir
-C:/Users/pavel.kulik/Projects/ni-daq/Build/CMakeFiles/INSTALL.dir
-C:/Users/pavel.kulik/Projects/ni-daq/Build/CMakeFiles/ALL_BUILD.dir
-C:/Users/pavel.kulik/Projects/ni-daq/Build/CMakeFiles/ZERO_CHECK.dir

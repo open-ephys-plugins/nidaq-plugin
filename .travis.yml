@@ -2,14 +2,4 @@ language: cpp
 os: windows
 env:
   - MSBUILD_PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin"
-script:
-  - export PATH=$MSBUILD_PATH:$PATH
-  - cd ..
-  - git clone -b cmakeBuild https://github.com/aacuevas/plugin-GUI.git
-  - cd plugin-GUI/Build
-  - cmake ..
-  - MSBuild.exe open-ephys.vcxproj /p:WarningLevel=0
-  - cd ../../..
-  - cd ni-daq/
-  - create_build_files.bat
-  - MSBuild.exe ni-daq.vcxproj /p:WarningLevel=0
+script: ./travis.sh
