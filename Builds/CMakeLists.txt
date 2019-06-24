@@ -1,3 +1,12 @@
+macro(print_all_variables)
+    message(STATUS "print_all_variables------------------------------------------{")
+    get_cmake_property(_variableNames VARIABLES)
+    foreach (_variableName ${_variableNames})
+        message(STATUS "${_variableName}=${${_variableName}}")
+    endforeach()
+    message(STATUS "print_all_variables------------------------------------------}")
+endmacro()
+
 # Setup the minimum version required of CMake to generate the Makefile:
 # Raises a FATAL_ERROR if version < 3.5
 cmake_minimum_required(VERSION 3.5.0 FATAL_ERROR)
@@ -8,7 +17,7 @@ project(ni-daq CXX)
 
 # Set the project source dir (just convention)
 set( NIDAQMX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Source)
-set( NIDAQMX_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} )
+set( NIDAQMS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} )
 
 # Set the current version of the code
 set ( NIDAQMX_VERSION_MAJOR 0)
@@ -25,7 +34,7 @@ endif()
 
 set(GUI_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../plugin-GUI)
 set(GUI_DEBUG_DIR ${GUI_BASE_DIR}/Builds/VisualStudio2013/x64/Debug/bin/plugins)
-set(NIDAQMX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Source)
+
 set(NIDAQMX_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Source/nidaq-api)
 set(NIDAQMX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Source/nidaq-api/lib64/msvc/NIDAQmx.lib)
 
@@ -62,8 +71,8 @@ if(MSVC)
 		set(GUI_BIN_DIR ${GUI_BIN_DIR}/x64)
 	endif()
 
-	link_directories(${PLUGIN_NAME} PUBLIC $<$<CONFIG:Debug>:${GUI_BIN_DIR}/Debug/bin>)
-	link_directories(${PLUGIN_NAME} PUBLIC $<$<CONFIG:Release>:${GUI_BIN_DIR}/Release/bin>)
+	target_link_directories(${PLUGIN_NAME} PUBLIC $<$<CONFIG:Debug>:${GUI_BIN_DIR}/Debug/bin>)
+	target_link_directories(${PLUGIN_NAME} PUBLIC $<$<CONFIG:Release>:${GUI_BIN_DIR}/Release/bin>)
 	target_link_libraries(${PLUGIN_NAME} open-ephys.lib)
 	target_link_libraries(${PLUGIN_NAME} "${NIDAQMX_LINK_DIR}")
 	target_compile_options(${PLUGIN_NAME} PRIVATE /sdl-)
@@ -98,3 +107,7 @@ foreach( src_file IN ITEMS ${SRC_FILES})
 	string(REPLACE "/" "\\" group_name "${src_path_rel}")
 	source_group("${group_name}" FILES "${src_file}")
 endforeach()
+
+print_all_variables()
+
+
