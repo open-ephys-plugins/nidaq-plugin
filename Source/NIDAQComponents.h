@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NUM_SOURCE_TYPES 4
 #define CHANNEL_BUFFER_SIZE 1000
 #define MAX_ANALOG_CHANNELS 8
+#define MAX_DIGITAL_CHANNELS 8
 #define ERR_BUFF_SIZE 2048
 #define STR2CHR( jString ) ((jString).toUTF8())
 #define DAQmxErrChk(functionCall) if( DAQmxFailed(error=(functionCall)) ) goto Error; else

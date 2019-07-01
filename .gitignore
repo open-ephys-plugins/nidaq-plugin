@@ -5,19 +5,9 @@
 *.d
 
 
-# 2. Windows related
+# 2. Platform specific build related
 
-Builds/VS2013/**/Debug
-Builds/VS2013/**/Release
-Builds/VS2013/x64
-Builds/VS2013/*.sdf
-Builds/VS2013/*.opensdf
-Builds/VS2013/*.suo
-Builds/VS2013/*.user
-Builds/VS2013/*/*.sdf
-Builds/VS2013/*/*.opensdf
-Builds/VS2013/*/*.suo
-Builds/VS2013/*/*.user
+Builds/*/*
 
 
 

@@ -209,10 +209,12 @@ void NIDAQmx::getAIChannels()
 	StringArray channel_list;
 	channel_list.addTokens(&data[0], ", ", "\"");
 
+	int aiCount = 0;
+
 	//printf("Found analog inputs:\n");
 	for (int i = 0; i < channel_list.size(); i++)
 	{
-		if (channel_list[i].length() > 0)
+		if (channel_list[i].length() > 0 && aiCount++ < MAX_ANALOG_CHANNELS)
 		{
 
 			/* Get channel termination */
@@ -265,7 +267,7 @@ void NIDAQmx::getAIVoltageRanges()
 	{
 		NIDAQ::float64 vmin = data[i];
 		NIDAQ::float64 vmax = data[i + 1];
-		if (int(vmin) == int(vmax)) 
+		if (vmin == vmax || vmax < 1e-2)
 			break;
 		//printf("Vmin: %f Vmax: %f \n", vmin, vmax);
 		aiVRanges.add(VRange(vmin, vmax));
@@ -282,18 +284,20 @@ void NIDAQmx::getDIChannels()
 	//NIDAQ::DAQmxGetDevTerminals(STR2CHR(deviceName), &data[0], sizeof(data)); //gets all terminals
 	//NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &data[0], sizeof(data));	//gets line name
 	NIDAQ::DAQmxGetDevDILines(STR2CHR(deviceName), &data[0], sizeof(data));	//gets ports on line
-	//printf("Found digital inputs: \n");
+	printf("Found digital inputs: \n");
 
 	StringArray channel_list;
 	channel_list.addTokens(&data[0], ", ", "\"");
+
+	int diCount = 0;
 
 	for (int i = 0; i < channel_list.size(); i++)
 	{
 		StringArray channel_type;
 		channel_type.addTokens(channel_list[i], "/", "\"");
-		if (channel_list[i].length() > 0)
+		if (channel_list[i].length() > 0 && diCount++ < MAX_DIGITAL_CHANNELS)
 		{
-			//printf("%s\n", channel_list[i].toUTF8());
+			printf("%s\n", channel_list[i].toUTF8());
 			di.add(DigitalIn(channel_list[i].toUTF8()));
 			diChannelEnabled.add(false);
 		}
@@ -340,6 +344,8 @@ void NIDAQmx::run()
 	NIDAQ::int32		ai_read = 0;
 	static int			totalAIRead = 0;
 	NIDAQ::TaskHandle	taskHandleAI = 0;
+
+	String usePort; //Temporary digital port restriction until software buffering is implemented
 
 	/* Create an analog input task */
 	if (isUSBDevice)
@@ -402,8 +408,16 @@ void NIDAQmx::run()
 	static int			totalDIRead = 0;
 	NIDAQ::TaskHandle	taskHandleDI = 0;
 
-	char lineName[2048];
-	NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &lineName[0], sizeof(lineName));
+	char ports[2048];
+	NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &ports[0], sizeof(ports));
+
+	/* For now, restrict max num digital inputs until software buffering is implemented */
+	if (MAX_DIGITAL_CHANNELS <= 8)
+	{
+		StringArray port_list;
+		port_list.addTokens(&ports[0], ", ", "\"");
+		usePort = port_list[0];
+	}
 
 	/* Create a digital input task using device serial number to gurantee unique task name per device */
 	if (isUSBDevice)
@@ -414,7 +428,7 @@ void NIDAQmx::run()
 	/* Create a channel for each digital input */
 	DAQmxErrChk(NIDAQ::DAQmxCreateDIChan(
 		taskHandleDI,
-		lineName,
+		STR2CHR(usePort),
 		"",
 		DAQmx_Val_ChanForAllLines));
 
