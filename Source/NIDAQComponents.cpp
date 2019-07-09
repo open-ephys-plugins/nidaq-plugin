@@ -114,31 +114,25 @@ NIDAQmx::NIDAQmx(const char* deviceName)
 
 	connect();
 
-	isUSBDevice = false;
-	if (productName.contains("USB"))
-		isUSBDevice = true;
+	float sample_rates[NUM_SAMPLE_RATES] = {
+		1000.0f, 1250.0f, 1500.0f,
+		2000.0f, 2500.0f,
+		3000.0f, 3330.0f,
+		4000.0f,
+		5000.0f,
+		6250.0f,
+		8000.0f,
+		10000.0f,
+		12500.0f,
+		15000.0f,
+		20000.0f,
+		25000.0f,
+		30000.0f
+	};
 
-	sampleRates.add(1000.0f);
-	sampleRates.add(1250.0f);
-	sampleRates.add(1500.0f);
-	sampleRates.add(2000.0f);
-	sampleRates.add(2500.0f);
-
-	if (!isUSBDevice)
-	{
-		sampleRates.add(3000.0f);
-		sampleRates.add(3330.0f);
-		sampleRates.add(4000.0f);
-		sampleRates.add(5000.0f);
-		sampleRates.add(6250.0f);
-		sampleRates.add(8000.0f);
-		sampleRates.add(10000.0f);
-		sampleRates.add(12500.0f);
-		sampleRates.add(15000.0f);
-		sampleRates.add(20000.0f);
-		sampleRates.add(25000.0f);
-		sampleRates.add(30000.0f);
-	}
+	int idx = 0;
+	while (sample_rates[idx] <= sampleRateRange.smaxm && idx < NUM_SAMPLE_RATES)
+		sampleRates.add(sample_rates[idx++]); 
 
 	// Default to highest sample rate
 	samplerate = sampleRates[sampleRates.size() - 1];
@@ -180,6 +174,10 @@ void NIDAQmx::connect()
 	productName = String(&pname[0]);
 	printf("Product Name: %s\n", productName);
 
+	isUSBDevice = false;
+	if (productName.contains("USB"))
+		isUSBDevice = true;
+
 	NIDAQ::DAQmxGetDevProductNum(STR2CHR(deviceName), &productNum);
 	printf("Product Num: %d\n", productNum);
 
@@ -192,11 +190,30 @@ void NIDAQmx::connect()
 	simAISamplingSupported = (supported == 1);
 	//printf("Simultaneous sampling %ssupported\n", simAISamplingSupported ? "" : "NOT ");
 
+	/* Get device sample rates */
+	NIDAQ::float64 smin;
+	NIDAQ::DAQmxGetDevAIMinRate(STR2CHR(deviceName), &smin);
+
+	NIDAQ::float64 smaxs;
+	NIDAQ::DAQmxGetDevAIMaxSingleChanRate(STR2CHR(deviceName), &smaxs);
+
+	NIDAQ::float64 smaxm;
+	NIDAQ::DAQmxGetDevAIMaxMultiChanRate(STR2CHR(deviceName), &smaxm);
+
 	fflush(stdout);
 
 	getAIChannels();
 	getAIVoltageRanges();
 	getDIChannels();
+
+	if (!simAISamplingSupported)
+		smaxm = smaxs / ai.size();
+
+	sampleRateRange = SRange(smin, smaxs, smaxm);
+
+	printf("Min sample rate: %1.2f\n", sampleRateRange.smin);
+	printf("Max single channel sample rate: %1.2f\n", sampleRateRange.smaxs);
+	printf("Max multi channel sample rate: %1.2f\n", sampleRateRange.smaxm);
 
 }
 

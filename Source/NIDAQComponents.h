@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NUM_SOURCE_TYPES 4
 #define CHANNEL_BUFFER_SIZE 1000
 #define MAX_ANALOG_CHANNELS 8
+#define NUM_SAMPLE_RATES 17
 #define MAX_DIGITAL_CHANNELS 8
 #define ERR_BUFF_SIZE 2048
 #define STR2CHR( jString ) ((jString).toUTF8())
@@ -91,6 +92,13 @@ struct VRange {
 		: vmin(rmin), vmax(rmax) {}
 };
 
+struct SRange {
+	NIDAQ::float64 smin, smaxs, smaxm;
+	SRange() : smin(0), smaxs(0), smaxm(0) {}
+	SRange(NIDAQ::float64 smin, NIDAQ::float64 smaxs, NIDAQ::float64 smaxm)
+		: smin(smin), smaxs(smaxs), smaxm(smaxm) {}
+};
+
 enum SOURCE_TYPE {
 	RSE = 0,
 	NRSE,
@@ -134,6 +142,7 @@ private:
 	bool				isUSBDevice;
 	bool				simAISamplingSupported;
 	float				adcResolution;
+	SRange 				sampleRateRange;
 
 	Array<VRange>		aiVRanges;
 	VRange				voltageRange;
