@@ -1,7 +1,6 @@
 # NI-DAQ plugin
 
 [![Build Status](https://travis-ci.org/medengineer/ni-daq.svg?branch=cmakeBuild)](https://travis-ci.org/medengineer/ni-daq)
-
 ## 
 
 The NI-DAQ plugin for the Open Ephys GUI adds support for analog and digital input signals from USB/PXI NI-DAQ devices. The plugin has been tested with up to 8 single-ended analog and 13 digital inputs with the following devices:
