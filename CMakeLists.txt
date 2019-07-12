@@ -52,8 +52,10 @@ set(GUI_BIN_DIR ${GUI_BASE_DIR}/Build/${CONFIGURATION_FOLDER})
 if (NOT CMAKE_LIBRARY_ARCHITECTURE)
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(CMAKE_LIBRARY_ARCHITECTURE "x64")
+		set(NIDAQMX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/nidaq-api/lib64/msvc/NIDAQmx.lib)
 	else()
 		set(CMAKE_LIBRARY_ARCHITECTURE "x86")
+		set(NIDAQMX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/nidaq-api/lib32/msvc/NIDAQmx.lib)
 	endif()
 endif()
 
@@ -94,7 +96,6 @@ endforeach()
 #Add 
 set(NIDAQMX_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/nidaq-api)
 target_include_directories(${PLUGIN_NAME} PRIVATE ${NIDAQMX_INCLUDE_DIR})
-set(NIDAQMX_LINK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Source/nidaq-api/lib64/msvc/NIDAQmx.lib)
 target_link_libraries(${PLUGIN_NAME} ${NIDAQMX_LINK_DIR})
 
 macro(print_all_variables)
