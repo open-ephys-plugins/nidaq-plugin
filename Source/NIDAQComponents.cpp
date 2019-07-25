@@ -324,7 +324,7 @@ Error:
 
 	if (DAQmxFailed(error))
 		printf("DAQmx Error: %s\n", errBuff);
-		fflush(stdout);
+	fflush(stdout);
 
 	return;
 
@@ -530,26 +530,29 @@ void NIDAQmx::run()
 			&ai_read,
 			NULL));
 
-		if (isUSBDevice)
-			DAQmxErrChk(NIDAQ::DAQmxReadDigitalU32(
-				taskHandleDI,
-				numSampsPerChan,
-				timeout,
-				DAQmx_Val_GroupByScanNumber,
-				di_data_32,
-				numSampsPerChan,
-				&di_read,
-				NULL));
-		else 
-			DAQmxErrChk(NIDAQ::DAQmxReadDigitalU8(
-				taskHandleDI,
-				numSampsPerChan,
-				timeout,
-				DAQmx_Val_GroupByScanNumber,
-				di_data_8,
-				numSampsPerChan,
-				&di_read,
-				NULL));
+		if (getActiveDigitalLines() > 0)
+		{
+			if (isUSBDevice)
+				DAQmxErrChk(NIDAQ::DAQmxReadDigitalU32(
+					taskHandleDI,
+					numSampsPerChan,
+					timeout,
+					DAQmx_Val_GroupByScanNumber,
+					di_data_32,
+					numSampsPerChan,
+					&di_read,
+					NULL));
+			else 
+				DAQmxErrChk(NIDAQ::DAQmxReadDigitalU8(
+					taskHandleDI,
+					numSampsPerChan,
+					timeout,
+					DAQmx_Val_GroupByScanNumber,
+					di_data_8,
+					numSampsPerChan,
+					&di_read,
+					NULL));
+		}
 
 		/*
 		std::chrono::milliseconds last_time;
@@ -578,11 +581,13 @@ void NIDAQmx::run()
 			if (i % MAX_ANALOG_CHANNELS == 0)
 			{
 				ai_timestamp++;
-				if (isUSBDevice)
-					eventCode = di_data_32[count++] & getActiveDigitalLines();
-				else
-					eventCode = di_data_8[count++] & getActiveDigitalLines();
-
+				if (getActiveDigitalLines() > 0)
+				{
+					if (isUSBDevice)
+						eventCode = di_data_32[count++] & getActiveDigitalLines();
+					else
+						eventCode = di_data_8[count++] & getActiveDigitalLines();
+				}
 				aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &eventCode, 1);
 			}
 

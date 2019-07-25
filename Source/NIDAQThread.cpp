@@ -113,7 +113,7 @@ int NIDAQThread::swapConnection(String productName)
 
 	if (!dm->getDeviceFromProductName(productName).isEmpty())
 	{
-		mNIDAQ = new  NIDAQmx(STR2CHR(dm->getDeviceFromProductName(productName)));
+		mNIDAQ = new NIDAQmx(STR2CHR(dm->getDeviceFromProductName(productName)));
 
 		sourceBuffers.removeLast();
 		sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
@@ -302,7 +302,6 @@ float NIDAQThread::getSampleRate(int subProcessorIdx) const
 
 float NIDAQThread::getBitVolts(const DataChannel* chan) const
 {
-	printf("Called getAdcBitVolts: %d\n", (int)mNIDAQ->adcResolution);
 
 	float vmin = mNIDAQ->voltageRange.vmin;
 	float vmax = mNIDAQ->voltageRange.vmax;
@@ -312,8 +311,6 @@ float NIDAQThread::getBitVolts(const DataChannel* chan) const
 
 float NIDAQThread::getAdcBitVolts()
 {
-
-	printf("Called getAdcBitVolts: %d\n", (int)mNIDAQ->adcResolution);
 
 	float vmin = mNIDAQ->voltageRange.vmin;
 	float vmax = mNIDAQ->voltageRange.vmax;
@@ -330,12 +327,6 @@ void NIDAQThread::setTriggerMode(bool trigger)
 void NIDAQThread::setAutoRestart(bool restart)
 {
 	//TODO
-}
-
-float NIDAQThread::getFillPercentage(int id)
-{
-	//TODO
-	return 0.0f;
 }
 
 bool NIDAQThread::updateBuffer()

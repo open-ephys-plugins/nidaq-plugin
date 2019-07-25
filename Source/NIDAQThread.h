@@ -147,8 +147,6 @@ public:
 	/** Get directory for input */
 	File getDirectoryForInput(int id);
 
-	float getFillPercentage(int id);
-
 	CriticalSection* getMutex()
 	{
 		return &displayMutex;
