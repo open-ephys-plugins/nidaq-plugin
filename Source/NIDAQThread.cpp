@@ -44,14 +44,15 @@ NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), inputAvailable(false)
 
 	if (dm->getNumAvailableDevices() == 0)
 	{
+		//Okay for now as plugin-GUI handles source init runtime errors. 
 		throw std::runtime_error("No NIDAQ devices detected!");
 	}
 
 	inputAvailable = true;
-
 	openConnection();
 
 }
+
 
 NIDAQThread::~NIDAQThread()
 {
@@ -299,35 +300,25 @@ float NIDAQThread::getSampleRate(int subProcessorIdx) const
 	return mNIDAQ->samplerate;
 }
 
-/** Returns the volts per bit of the data source.*/
 float NIDAQThread::getBitVolts(const DataChannel* chan) const
 {
+	printf("Called getAdcBitVolts: %d\n", (int)mNIDAQ->adcResolution);
 
 	float vmin = mNIDAQ->voltageRange.vmin;
 	float vmax = mNIDAQ->voltageRange.vmax;
 
-	return (vmax - vmin) / pow(2, mNIDAQ->adcResolution);
-
+	return (vmax - vmin) / pow(2, (int)mNIDAQ->adcResolution);
 }
 
 float NIDAQThread::getAdcBitVolts()
 {
 
+	printf("Called getAdcBitVolts: %d\n", (int)mNIDAQ->adcResolution);
+
 	float vmin = mNIDAQ->voltageRange.vmin;
 	float vmax = mNIDAQ->voltageRange.vmax;
 
-	int adcResolution;
-
-	if (mNIDAQ->getProductName() == "USB-6001")
-	{
-		adcResolution = 14;
-	}
-	else if (mNIDAQ->getProductName() == "PXI-6133")
-	{
-		adcResolution = 14;
-	}
-
-	return (vmax - vmin) / pow(2, adcResolution);
+	return (vmax - vmin) / pow(2, (int)mNIDAQ->adcResolution);
 
 }
 

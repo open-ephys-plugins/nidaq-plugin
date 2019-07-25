@@ -141,7 +141,7 @@ private:
 	NIDAQ::uInt32		serialNum;
 	bool				isUSBDevice;
 	bool				simAISamplingSupported;
-	float				adcResolution;
+	NIDAQ::float64		adcResolution;
 	SRange 				sampleRateRange;
 
 	Array<VRange>		aiVRanges;

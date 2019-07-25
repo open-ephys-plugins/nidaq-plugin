@@ -118,7 +118,6 @@ public:
 	/** Returns the volts per bit of the data source.*/
 	float getBitVolts(const DataChannel* chan) const override;
 
-	/** Returns the volts per bit of the ADC source. */
 	float getAdcBitVolts();
 
 	/** Used to set default channel names.*/

@@ -110,7 +110,7 @@ NIDAQmx::NIDAQmx(const char* deviceName)
 	deviceName(deviceName)
 {
 
-	adcResolution = 14; //bits
+	adcResolution = 0; //bits
 
 	connect();
 
@@ -202,8 +202,8 @@ void NIDAQmx::connect()
 
 	fflush(stdout);
 
-	getAIChannels();
 	getAIVoltageRanges();
+	getAIChannels();
 	getDIChannels();
 
 	if (!simAISamplingSupported)
@@ -217,8 +217,35 @@ void NIDAQmx::connect()
 
 }
 
+void NIDAQmx::getAIVoltageRanges()
+{
+
+	NIDAQ::float64 data[512];
+	NIDAQ::DAQmxGetDevAIVoltageRngs(STR2CHR(deviceName), &data[0], sizeof(data));
+
+	//printf("Detected voltage ranges:\n");
+	for (int i = 0; i < 512; i += 2)
+	{
+		NIDAQ::float64 vmin = data[i];
+		NIDAQ::float64 vmax = data[i + 1];
+		if (vmin == vmax || vmax < 1e-2)
+			break;
+		//printf("Vmin: %f Vmax: %f \n", vmin, vmax);
+		aiVRanges.add(VRange(vmin, vmax));
+	}
+
+	fflush(stdout);
+
+}
+
 void NIDAQmx::getAIChannels()
 {
+
+	NIDAQ::int32	error = 0;
+	char			errBuff[ERR_BUFF_SIZE] = { '\0' };
+
+	NIDAQ::TaskHandle adcResolutionQuery;
+	NIDAQ::DAQmxCreateTask("ADCResolutionQuery", &adcResolutionQuery);
 
 	char data[2048];
 	NIDAQ::DAQmxGetDevAIPhysicalChans(STR2CHR(deviceName), &data[0], sizeof(data));
@@ -228,7 +255,8 @@ void NIDAQmx::getAIChannels()
 
 	int aiCount = 0;
 
-	//printf("Found analog inputs:\n");
+	VRange vRange = aiVRanges[aiVRanges.size() - 1];
+
 	for (int i = 0; i < channel_list.size(); i++)
 	{
 		if (channel_list[i].length() > 0 && aiCount++ < MAX_ANALOG_CHANNELS)
@@ -262,35 +290,43 @@ void NIDAQmx::getAIChannels()
 				st.add(SOURCE_TYPE::PSEUDO_DIFF);
 			}
 
+			/* Get channel ADC resolution */
+			DAQmxErrChk(NIDAQ::DAQmxCreateAIVoltageChan(
+				adcResolutionQuery,			//task handle
+				STR2CHR(ai[aiCount-1].id),	//NIDAQ physical channel name (e.g. dev1/ai1)
+				"",							//user-defined channel name (optional)
+				DAQmx_Val_Cfg_Default,		//input terminal configuration
+				vRange.vmin,				//min input voltage
+				vRange.vmax,				//max input voltage
+				DAQmx_Val_Volts,			//voltage units
+				NULL));
+
+			DAQmxErrChk(NIDAQ::DAQmxGetAIResolution(adcResolutionQuery, channel_list[i].toUTF8(), &adcResolution));
 			aiChannelEnabled.add(true);
 
 		}
 	}
 
-	printf("\n");
-
 	fflush(stdout);
+	NIDAQ::DAQmxStopTask(adcResolutionQuery);
+	NIDAQ::DAQmxClearTask(adcResolutionQuery);
 
-}
+Error:
 
-void NIDAQmx::getAIVoltageRanges()
-{
+	if (DAQmxFailed(error))
+		NIDAQ::DAQmxGetExtendedErrorInfo(errBuff, ERR_BUFF_SIZE);
 
-	NIDAQ::float64 data[512];
-	NIDAQ::DAQmxGetDevAIVoltageRngs(STR2CHR(deviceName), &data[0], sizeof(data));
-
-	//printf("Detected voltage ranges:\n");
-	for (int i = 0; i < 512; i += 2)
-	{
-		NIDAQ::float64 vmin = data[i];
-		NIDAQ::float64 vmax = data[i + 1];
-		if (vmin == vmax || vmax < 1e-2)
-			break;
-		//printf("Vmin: %f Vmax: %f \n", vmin, vmax);
-		aiVRanges.add(VRange(vmin, vmax));
+	if (adcResolutionQuery != 0) {
+		// DAQmx Stop Code
+		NIDAQ::DAQmxStopTask(adcResolutionQuery);
+		NIDAQ::DAQmxClearTask(adcResolutionQuery);
 	}
 
-	fflush(stdout);
+	if (DAQmxFailed(error))
+		printf("DAQmx Error: %s\n", errBuff);
+		fflush(stdout);
+
+	return;
 
 }
 
