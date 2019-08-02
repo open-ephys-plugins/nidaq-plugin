@@ -9,4 +9,4 @@ package="ni-daq"
 version="0.1"
 
 cd $build_dir
-curl -T $filename --user $user_info https://api.bintray.com/content/$BINTRAY_USER/$repo/$package/$version/$filename
+curl -T $filename --user $user_info https://api.bintray.com/content/$BINTRAY_USER/$repo/$package/$version/$filename;publish=1
