@@ -256,7 +256,7 @@ void NIDAQThread::setDefaultChannelNames()
 	{
 		ChannelCustomInfo info;
 		info.name = "AI" + String(i + 1);
-		info.gain = getAdcBitVolts();
+		info.gain = mNIDAQ->voltageRange.vmax / float(0x7fff);
 		channelInfo.set(i, info);
 	}
 
@@ -302,22 +302,10 @@ float NIDAQThread::getSampleRate(int subProcessorIdx) const
 
 float NIDAQThread::getBitVolts(const DataChannel* chan) const
 {
-
-	float vmin = mNIDAQ->voltageRange.vmin;
-	float vmax = mNIDAQ->voltageRange.vmax;
-
-	return (vmax - vmin) / pow(2, (int)mNIDAQ->adcResolution);
+	return mNIDAQ->voltageRange.vmax / float(0x7fff);
 }
 
-float NIDAQThread::getAdcBitVolts()
-{
 
-	float vmin = mNIDAQ->voltageRange.vmin;
-	float vmax = mNIDAQ->voltageRange.vmax;
-
-	return (vmax - vmin) / pow(2, (int)mNIDAQ->adcResolution);
-
-}
 
 void NIDAQThread::setTriggerMode(bool trigger)
 {
