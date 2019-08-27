@@ -1,7 +1,7 @@
 # NI-DAQ plugin
 
 [![Build Status](https://travis-ci.org/open-ephys-plugins/nidaq-plugin.svg?branch=master)](https://travis-ci.org/open-ephys-plugins/nidaq-plugin)
-[![Download](https://api.bintray.com/packages/open-ephys/open-ephys-plugins/ni-daq/images/download.svg?version=0.1)](https://bintray.com/open-ephys/open-ephys-plugins/ni-daq/0.1/link)
+[![Download](https://api.bintray.com/packages/open-ephys/open-ephys-plugins/ni-daq/images/download.svg?version=0.1.3)](https://bintray.com/open-ephys/open-ephys-plugins/ni-daq/0.1.3/link)
 
 ## 
 
