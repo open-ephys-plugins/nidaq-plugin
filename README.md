@@ -13,4 +13,4 @@ The NI-DAQ plugin for the Open Ephys GUI adds support for analog and digital inp
 
 If you are using a different NI-DAQ device in your setup and can confirm it works and/or has issues, please let us know!
  
-The full module documentation can be found here: https://open-ephys.atlassian.net/wiki/spaces/OEW/pages/1294630913/NIDAQmx+Source+Module
+The full module documentation can be found [here](https://open-ephys.github.io/gui-docs/User%20Manual/Plugins/NIDAQmx.html).
