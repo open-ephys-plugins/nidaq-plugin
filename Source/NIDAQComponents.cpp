@@ -79,6 +79,9 @@ void NIDAQmxDeviceManager::scanForDevices()
 		if (deviceList[i].length() > 0)
 			devices.add(deviceList[i].toUTF8());
 
+	if (!devices.size())
+		devices.add("SimulatedDevice"); 
+
 }
 
 String NIDAQmxDeviceManager::getDeviceFromIndex(int index)
@@ -164,52 +167,65 @@ String NIDAQmx::getSerialNumber()
 
 void NIDAQmx::connect()
 {
-	/* Get category type */
-	NIDAQ::DAQmxGetDevProductCategory(STR2CHR(deviceName), &deviceCategory);
-	printf("Device Category: %i\n", deviceCategory);
 
-	/* Get product name */
-	char pname[2048] = { 0 };
-	NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceName), &pname[0], sizeof(pname));
-	productName = String(&pname[0]);
-	printf("Product Name: %s\n", productName);
+	if (deviceName == "SimulatedDevice")
+	{
+		isUSBDevice = false;
+		sampleRateRange = SRange(1000.0f, 30000.0f, 30000.0f);
+		aiVRanges.add(VRange(-10.0f, 10.0f));
+		productName = String("No Device Detected");
 
-	isUSBDevice = false;
-	if (productName.contains("USB"))
-		isUSBDevice = true;
+	}
+	else
+	{
+		/* Get category type */
+		NIDAQ::DAQmxGetDevProductCategory(STR2CHR(deviceName), &deviceCategory);
+		printf("Device Category: %i\n", deviceCategory);
 
-	NIDAQ::DAQmxGetDevProductNum(STR2CHR(deviceName), &productNum);
-	printf("Product Num: %d\n", productNum);
+		/* Get product name */
+		char pname[2048] = { 0 };
+		NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceName), &pname[0], sizeof(pname));
+		productName = String(&pname[0]);
+		printf("Product Name: %s\n", productName);
 
-	NIDAQ::DAQmxGetDevSerialNum(STR2CHR(deviceName), &serialNum);
-	printf("Serial Num: %d\n", serialNum);
+		isUSBDevice = false;
+		if (productName.contains("USB"))
+			isUSBDevice = true;
 
-	/* Get simultaneous sampling supported */
-	NIDAQ::bool32 supported = false;
-	NIDAQ::DAQmxGetDevAISimultaneousSamplingSupported(STR2CHR(deviceName), &supported);
-	simAISamplingSupported = (supported == 1);
-	//printf("Simultaneous sampling %ssupported\n", simAISamplingSupported ? "" : "NOT ");
+		NIDAQ::DAQmxGetDevProductNum(STR2CHR(deviceName), &productNum);
+		printf("Product Num: %d\n", productNum);
 
-	/* Get device sample rates */
-	NIDAQ::float64 smin;
-	NIDAQ::DAQmxGetDevAIMinRate(STR2CHR(deviceName), &smin);
+		NIDAQ::DAQmxGetDevSerialNum(STR2CHR(deviceName), &serialNum);
+		printf("Serial Num: %d\n", serialNum);
 
-	NIDAQ::float64 smaxs;
-	NIDAQ::DAQmxGetDevAIMaxSingleChanRate(STR2CHR(deviceName), &smaxs);
+		/* Get simultaneous sampling supported */
+		NIDAQ::bool32 supported = false;
+		NIDAQ::DAQmxGetDevAISimultaneousSamplingSupported(STR2CHR(deviceName), &supported);
+		simAISamplingSupported = (supported == 1);
+		//printf("Simultaneous sampling %ssupported\n", simAISamplingSupported ? "" : "NOT ");
 
-	NIDAQ::float64 smaxm;
-	NIDAQ::DAQmxGetDevAIMaxMultiChanRate(STR2CHR(deviceName), &smaxm);
+		/* Get device sample rates */
+		NIDAQ::float64 smin;
+		NIDAQ::DAQmxGetDevAIMinRate(STR2CHR(deviceName), &smin);
 
-	fflush(stdout);
+		NIDAQ::float64 smaxs;
+		NIDAQ::DAQmxGetDevAIMaxSingleChanRate(STR2CHR(deviceName), &smaxs);
 
-	getAIVoltageRanges();
-	getAIChannels();
-	getDIChannels();
+		NIDAQ::float64 smaxm;
+		NIDAQ::DAQmxGetDevAIMaxMultiChanRate(STR2CHR(deviceName), &smaxm);
 
-	if (!simAISamplingSupported)
-		smaxm = smaxs / ai.size();
+		fflush(stdout);
 
-	sampleRateRange = SRange(smin, smaxs, smaxm);
+		getAIVoltageRanges();
+		getAIChannels();
+		getDIChannels();
+
+		if (!simAISamplingSupported)
+			smaxm = smaxs / ai.size();
+
+		sampleRateRange = SRange(smin, smaxs, smaxm);
+
+	}
 
 	printf("Min sample rate: %1.2f\n", sampleRateRange.smin);
 	printf("Max single channel sample rate: %1.2f\n", sampleRateRange.smaxs);

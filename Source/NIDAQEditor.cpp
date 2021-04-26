@@ -201,7 +201,7 @@ void AIButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 		g.setColour(Colours::darkgrey);
 	g.fillEllipse(0, 0, 15, 15);
 
-	if (enabled)
+	if (enabled && thread->inputAvailable)
 	{
 		if (isMouseOver)
 			g.setColour(Colours::lightgreen);
@@ -253,7 +253,7 @@ void DIButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 		g.setColour(Colours::darkgrey);
 	g.fillRoundedRectangle(0, 0, 15, 15, 2);
 
-	if (enabled)
+	if (enabled && thread->inputAvailable)
 	{
 		if (isMouseOver)
 			g.setColour(Colours::lightgreen);
@@ -349,8 +349,19 @@ void NIDAQEditor::draw()
 
 	NIDAQThread* t = thread; 
 
-	int nAI = t->getNumAnalogInputs();
-	int nDI = t->getNumDigitalInputs();
+	int nAI;
+	int nDI;
+
+	if (t->getProductName() == "No Device Detected")
+	{
+		nAI = 8;
+		nDI = 8;
+	}
+	else
+	{
+		nAI = t->getNumAnalogInputs();
+		nDI = t->getNumDigitalInputs();
+	}
 
 	int maxChannelsPerColumn = 4;
 	int aiChannelsPerColumn = nAI > 0 && nAI < maxChannelsPerColumn ? nAI : maxChannelsPerColumn;

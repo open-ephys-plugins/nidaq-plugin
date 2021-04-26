@@ -42,15 +42,11 @@ NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), inputAvailable(false)
 
 	dm->scanForDevices();
 
-	if (dm->getNumAvailableDevices() == 0)
+	if (dm->getNumAvailableDevices() > 0 && dm->getDeviceFromIndex(0) != "SimulatedDevice")
 	{
-		//Okay for now as plugin-GUI handles source init runtime errors. 
-		throw std::runtime_error("No NIDAQ devices detected!");
+		inputAvailable = true;
 	}
-
-	inputAvailable = true;
 	openConnection();
-
 }
 
 
