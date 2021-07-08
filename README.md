@@ -2,7 +2,7 @@
 
 ## 
 
-The NI-DAQ plugin for the Open Ephys GUI adds support for analog and digital input signals from USB/PXI NI-DAQ devices. The plugin has been tested with up to 8 single-ended analog and 13 digital inputs with the following devices:
+The NI-DAQ plugin for the Open Ephys GUI adds support for analog and digital input signals from USB/PXI NI-DAQ devices. The plugin has been tested with the following devices:
 
 * PCIe-6321, PXI-6133, PXIe-6341
   * BNC-2090A
@@ -11,6 +11,8 @@ The NI-DAQ plugin for the Open Ephys GUI adds support for analog and digital inp
 * USB-6001 
 
 ##### Important Note: Syncing analog and digital channels only works with NI devices that support correlated (hardware-timed) digital I/O.
+
+The plugin is limited to support 8 analog inputs and 8 digital inputs maximum. If your experiment requires more inputs, please send me an e-mail at pavel@open-ephys.org for a custom version. 
 
 If you are using a different NI-DAQ device in your setup and can confirm it works and/or has issues, please let us know!
  
