@@ -30,9 +30,15 @@ DataThread* NIDAQThread::createDataThread(SourceNode *sn)
 	return new NIDAQThread(sn);
 }
 
-GenericEditor* NIDAQThread::createEditor(SourceNode* sn)
+std::unique_ptr<GenericEditor> NIDAQThread::createEditor(SourceNode* sn)
 {
-    return new NIDAQEditor(sn, this, true);
+
+	std::unique_ptr<NIDAQEditor> ed = std::make_unique<NIDAQEditor>(sn, this);
+
+	editor = ed.get();
+
+	return ed;
+
 }
 
 NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), inputAvailable(false)
@@ -52,6 +58,105 @@ NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), inputAvailable(false)
 
 NIDAQThread::~NIDAQThread()
 {
+}
+
+void NIDAQThread::initialize(bool signalChainIsLoading)
+{
+	//Used in Neuropixels to initialize probes in background -- not needed for NIDAQ devices
+	//editor->initialize(signalChainIsLoading);
+
+}
+
+String NIDAQThread::handleConfigMessage(String msg)
+{
+	//TODO:
+	return " ";
+}
+
+void NIDAQThread::handleMessage(String msg)
+{
+	//TODO
+}
+
+void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChannels,
+	OwnedArray<EventChannel>* eventChannels,
+	OwnedArray<SpikeChannel>* spikeChannels,
+	OwnedArray<DataStream>* dataStreams,
+	OwnedArray<DeviceInfo>* devices,
+	OwnedArray<ConfigurationObject>* configurationObjects)
+{
+
+	if (sourceStreams.size() == 0) // initialize data streams
+	{
+
+		DataStream::Settings settings
+		{
+			getProductName(),
+			"Analog input channels from a NIDAQ device",
+			"identifier",
+
+			getSampleRate()
+
+		};
+
+		sourceStreams.add(new DataStream(settings));
+
+	}
+
+	dataStreams->clear();
+	eventChannels->clear();
+	continuousChannels->clear();
+	spikeChannels->clear();
+	devices->clear();
+	configurationObjects->clear();
+
+	for (int i = 0; i < sourceStreams.size(); i++)
+	{
+		DataStream* currentStream = sourceStreams[i];
+
+		currentStream->clearChannels();
+
+		//TODO: Maybe implement for each NIDAQ device
+		//StreamInfo info = streamInfo[i];
+
+		for (int ch = 0; ch < mNIDAQ->aiChannelEnabled.size(); ch++)
+		{
+			float bitVolts = mNIDAQ->voltageRange.vmax / float(0x7fff);
+
+			ContinuousChannel::Settings settings{
+				ContinuousChannel::Type::ADC,
+				"AI" + String(ch + 1),
+				"Analog Input channel from a NIDAQ device",
+				"identifier",
+
+				bitVolts,
+
+				currentStream
+			};
+
+			continuousChannels->add(new ContinuousChannel(settings));
+
+		}
+
+		EventChannel::Settings settings{
+			EventChannel::Type::TTL,
+			getProductName() + "Digital Input Line",
+			"Digital Line from a NIDAQ device containing " + String(mNIDAQ->diChannelEnabled.size()) + " inputs",
+			"identifier",
+			currentStream,
+			mNIDAQ->diChannelEnabled.size()
+		};
+
+		eventChannels->add(new EventChannel(settings));
+
+		dataStreams->add(new DataStream(*currentStream)); // copy existing stream
+
+	}
+
+	LOGC("NIDAQ added ", sourceStreams.size(), " stream", (sourceStreams.size() == 1 ? "." : "s."));
+	LOGC("Found ", continuousChannels->size(), " analog input channels");
+	LOGC("Found ", eventChannels->size(), " digital line with ", eventChannels->getLast()->getMaxTTLBits(), " Digital Input channels");
+
 }
 
 int NIDAQThread::openConnection()
@@ -173,6 +278,11 @@ void NIDAQThread::setSampleRate(int rateIndex)
 	mNIDAQ->samplerate = mNIDAQ->sampleRates[rateIndex];
 }
 
+float NIDAQThread::getSampleRate()
+{
+	return mNIDAQ->samplerate;
+}
+
 int NIDAQThread::getVoltageRangeIndex()
 {
 	return voltageRangeIndex;
@@ -245,6 +355,8 @@ bool NIDAQThread::stopAcquisition()
     return true;
 }
 
+/* DEPRECATED 
+
 void NIDAQThread::setDefaultChannelNames()
 {
 
@@ -263,13 +375,13 @@ bool NIDAQThread::usesCustomNames() const
 	return true;
 }
 
-/** Returns the number of virtual subprocessors this source can generate */
+// Returns the number of virtual subprocessors this source can generate 
 unsigned int NIDAQThread::getNumSubProcessors() const
 {
 	return 1;
 }
 
-/** Returns the number of continuous headstage channels the data source can provide.*/
+// Returns the number of continuous headstage channels the data source can provide.
 int NIDAQThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int subProcessorIdx) const
 {
 	if (subProcessorIdx > 0) return 0;
@@ -284,13 +396,14 @@ int NIDAQThread::getNumDataOutputs(DataChannel::DataChannelTypes type, int subPr
 	return numChans;
 }
 
-/** Returns the number of TTL channels that each subprocessor generates*/
+// Returns the number of TTL channels that each subprocessor generates
 int NIDAQThread::getNumTTLOutputs(int subProcessorIdx) const
 {
 	return getNumDigitalInputs();
 }
 
-/** Returns the sample rate of the data source.*/
+
+// Returns the sample rate of the data source.
 float NIDAQThread::getSampleRate(int subProcessorIdx) const
 {
 	return mNIDAQ->samplerate;
@@ -302,7 +415,6 @@ float NIDAQThread::getBitVolts(const DataChannel* chan) const
 }
 
 
-
 void NIDAQThread::setTriggerMode(bool trigger)
 {
     //TODO
@@ -312,6 +424,7 @@ void NIDAQThread::setAutoRestart(bool restart)
 {
 	//TODO
 }
+*/
 
 bool NIDAQThread::updateBuffer()
 {

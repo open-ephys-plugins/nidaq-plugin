@@ -336,8 +336,8 @@ void BackgroundLoader::run()
 }
 
 
-NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t, bool useDefaultParameterEditors)
-	: GenericEditor(parentNode, useDefaultParameterEditors), thread(t)
+NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t)
+	: GenericEditor(parentNode), thread(t)
 {
 
 	draw();
@@ -459,13 +459,20 @@ void NIDAQEditor::draw()
 	background->toBack();
 	background->repaint();
 
-	setDisplayName("NIDAQmx-(" + t->getProductName() + ")");
+	//TODO: Why this line casuses crash in editor->update in v6?
+	//setDisplayName("NIDAQmx-(" + t->getProductName() + ")");
 
 }
 
 NIDAQEditor::~NIDAQEditor()
 {
 
+}
+
+/** Respond to button presses */
+void NIDAQEditor::buttonClicked(Button* button)
+{
+	//LOG the action here?
 }
 
 void NIDAQEditor::comboBoxChanged(ComboBox* comboBox)

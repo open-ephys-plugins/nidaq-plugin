@@ -151,16 +151,19 @@ private:
 	NIDAQEditor* e;
 };
 
-class NIDAQEditor : public GenericEditor, public ComboBox::Listener
+class NIDAQEditor : public GenericEditor, public ComboBox::Listener, public Button::Listener
 {
 public:
-	NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* thread, bool useDefaultParameterEditors);
+	NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* thread);
 	virtual ~NIDAQEditor();
 
 	void draw();
 
 	void buttonEvent(Button* button);
 	void comboBoxChanged(ComboBox*);
+
+	/** Respond to button presses */
+	void buttonClicked(Button* button) override;
 
 	void saveCustomParameters(XmlElement*);
 	void loadCustomParameters(XmlElement*);

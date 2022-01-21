@@ -422,7 +422,6 @@ void NIDAQmx::run()
 	else
 		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("AITask_PXI" + getSerialNumber()), &taskHandleAI));
 
-
 	/* Create a voltage channel for each analog input */
 	for (int i = 0; i < ai.size(); i++)
 	{
