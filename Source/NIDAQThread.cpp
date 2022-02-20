@@ -125,7 +125,7 @@ void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChanne
 
 			ContinuousChannel::Settings settings{
 				ContinuousChannel::Type::ADC,
-				"AI" + String(ch + 1),
+				"AI" + String(ch),
 				"Analog Input channel from a NIDAQ device",
 				"identifier",
 
