@@ -73,7 +73,7 @@ String NIDAQThread::handleConfigMessage(String msg)
 	return " ";
 }
 
-void NIDAQThread::handleMessage(String msg)
+void NIDAQThread::handleBroadcastMessage(String msg)
 {
 	//TODO
 }

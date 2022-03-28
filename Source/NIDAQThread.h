@@ -160,7 +160,7 @@ public:
 	/** Get directory for input */
 	File getDirectoryForInput(int id);
 
-	void handleMessage(String msg) override;
+	void handleBroadcastMessage(String msg) override;
 
 	String handleConfigMessage(String msg) override;
 
