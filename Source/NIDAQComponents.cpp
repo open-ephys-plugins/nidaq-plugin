@@ -528,6 +528,7 @@ void NIDAQmx::run()
 	NIDAQ::float64 timeout = 5.0;
 
 	uint64 linesEnabled = 0;
+	double ts;
 
 	ai_timestamp = 0;
 	eventCode = 0;
@@ -603,7 +604,7 @@ void NIDAQmx::run()
 					else
 						eventCode = di_data_8[count++] & getActiveDigitalLines();
 				}
-				aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &eventCode, 1);
+				aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &ts, &eventCode, 1);
 			}
 
 		}
