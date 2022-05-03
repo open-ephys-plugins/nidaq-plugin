@@ -385,7 +385,7 @@ void NIDAQEditor::draw()
 		aiButtons.add(a);
 
 		SOURCE_TYPE sourceType = thread->getSourceTypeForInput(i);
-		printf("Got source type for input %d: %d\n", i, sourceType);
+		LOGD("Got source type for input ", i, ": ", sourceType);
 
 		SourceTypeButton* b = new SourceTypeButton(i, thread, sourceType);
 		b->setBounds(xOffset+18, y_pos-2, 26, 17);

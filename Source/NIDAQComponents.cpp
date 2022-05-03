@@ -178,25 +178,26 @@ void NIDAQmx::connect()
 	}
 	else
 	{
+		LOGC("NIDAQmx");
 		/* Get category type */
 		NIDAQ::DAQmxGetDevProductCategory(STR2CHR(deviceName), &deviceCategory);
-		printf("Device Category: %i\n", deviceCategory);
+		LOGC("Device Category: ", deviceCategory);
 
 		/* Get product name */
 		char pname[2048] = { 0 };
 		NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceName), &pname[0], sizeof(pname));
 		productName = String(&pname[0]);
-		printf("Product Name: %s\n", productName);
+		LOGC("Product Name: ", productName);
 
 		isUSBDevice = false;
 		if (productName.contains("USB"))
 			isUSBDevice = true;
 
 		NIDAQ::DAQmxGetDevProductNum(STR2CHR(deviceName), &productNum);
-		printf("Product Num: %d\n", productNum);
+		LOGC("Product Num: ", productNum);
 
 		NIDAQ::DAQmxGetDevSerialNum(STR2CHR(deviceName), &serialNum);
-		printf("Serial Num: %d\n", serialNum);
+		LOGC("Serial Num: ", serialNum);
 
 		/* Get simultaneous sampling supported */
 		NIDAQ::bool32 supported = false;
@@ -227,9 +228,9 @@ void NIDAQmx::connect()
 
 	}
 
-	printf("Min sample rate: %1.2f\n", sampleRateRange.smin);
-	printf("Max single channel sample rate: %1.2f\n", sampleRateRange.smaxs);
-	printf("Max multi channel sample rate: %1.2f\n", sampleRateRange.smaxm);
+	LOGC("Min sample rate: ", sampleRateRange.smin);
+	LOGC("Max single channel sample rate: ", sampleRateRange.smaxs);
+	LOGC("Max multi channel sample rate: ", sampleRateRange.smaxm);
 
 }
 
@@ -282,8 +283,7 @@ void NIDAQmx::getAIChannels()
 			NIDAQ::int32 termCfgs;
 			NIDAQ::DAQmxGetPhysicalChanAITermCfgs(channel_list[i].toUTF8(), &termCfgs);
 
-			printf("%s - ", channel_list[i].toUTF8());
-			printf("Terminal Config: %d\n", termCfgs);
+			LOGD(channel_list[i].toUTF8(), " Terminal Config: ", termCfgs);
 
 			ai.add(AnalogIn(channel_list[i].toUTF8()));
 
@@ -339,7 +339,7 @@ Error:
 	}
 
 	if (DAQmxFailed(error))
-		printf("DAQmx Error: %s\n", errBuff);
+		LOGE("DAQmx Error: ", errBuff);
 	fflush(stdout);
 
 	return;
@@ -353,7 +353,7 @@ void NIDAQmx::getDIChannels()
 	//NIDAQ::DAQmxGetDevTerminals(STR2CHR(deviceName), &data[0], sizeof(data)); //gets all terminals
 	//NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &data[0], sizeof(data));	//gets line name
 	NIDAQ::DAQmxGetDevDILines(STR2CHR(deviceName), &data[0], sizeof(data));	//gets ports on line
-	printf("Found digital inputs: \n");
+	LOGD("Found digital inputs: ");
 
 	StringArray channel_list;
 	channel_list.addTokens(&data[0], ", ", "\"");
@@ -366,7 +366,7 @@ void NIDAQmx::getDIChannels()
 		channel_type.addTokens(channel_list[i], "/", "\"");
 		if (channel_list[i].length() > 0 && diCount++ < MAX_DIGITAL_CHANNELS)
 		{
-			printf("%s\n", channel_list[i].toUTF8());
+			LOGD(channel_list[i].toUTF8());
 			di.add(DigitalIn(channel_list[i].toUTF8()));
 			diChannelEnabled.add(false);
 		}
@@ -641,7 +641,7 @@ Error:
 		NIDAQ::DAQmxClearTask(taskHandleDI);
 	}
 	if (DAQmxFailed(error))
-		printf("DAQmx Error: %s\n", errBuff);
+		LOGE("DAQmx Error: ", errBuff);
 		fflush(stdout);
 
 	return;
