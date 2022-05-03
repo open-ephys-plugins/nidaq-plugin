@@ -178,26 +178,26 @@ void NIDAQmx::connect()
 	}
 	else
 	{
-		LOGC("NIDAQmx");
+		//LOGC("NIDAQmx");
 		/* Get category type */
 		NIDAQ::DAQmxGetDevProductCategory(STR2CHR(deviceName), &deviceCategory);
-		LOGC("Device Category: ", deviceCategory);
+		//LOGC("Device Category: ", (int) deviceCategory);
 
 		/* Get product name */
 		char pname[2048] = { 0 };
 		NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceName), &pname[0], sizeof(pname));
 		productName = String(&pname[0]);
-		LOGC("Product Name: ", productName);
+		//LOGC("Product Name: ", productName);
 
 		isUSBDevice = false;
 		if (productName.contains("USB"))
 			isUSBDevice = true;
 
 		NIDAQ::DAQmxGetDevProductNum(STR2CHR(deviceName), &productNum);
-		LOGC("Product Num: ", productNum);
+		//LOGC("Product Num: ", productNum);
 
 		NIDAQ::DAQmxGetDevSerialNum(STR2CHR(deviceName), &serialNum);
-		LOGC("Serial Num: ", serialNum);
+		//LOGC("Serial Num: ", serialNum);
 
 		/* Get simultaneous sampling supported */
 		NIDAQ::bool32 supported = false;
@@ -215,8 +215,6 @@ void NIDAQmx::connect()
 		NIDAQ::float64 smaxm;
 		NIDAQ::DAQmxGetDevAIMaxMultiChanRate(STR2CHR(deviceName), &smaxm);
 
-		fflush(stdout);
-
 		getAIVoltageRanges();
 		getAIChannels();
 		getDIChannels();
@@ -228,9 +226,9 @@ void NIDAQmx::connect()
 
 	}
 
-	LOGC("Min sample rate: ", sampleRateRange.smin);
-	LOGC("Max single channel sample rate: ", sampleRateRange.smaxs);
-	LOGC("Max multi channel sample rate: ", sampleRateRange.smaxm);
+	//LOGC("Min sample rate: ", sampleRateRange.smin);
+	//LOGC("Max single channel sample rate: ", sampleRateRange.smaxs);
+	//LOGC("Max multi channel sample rate: ", sampleRateRange.smaxm);
 
 }
 
@@ -414,6 +412,8 @@ void NIDAQmx::run()
 	static int			totalAIRead = 0;
 	NIDAQ::TaskHandle	taskHandleAI = 0;
 
+	aiBuffer->clear();
+
 	String usePort; //Temporary digital port restriction until software buffering is implemented
 
 	/* Create an analog input task */
@@ -533,6 +533,8 @@ void NIDAQmx::run()
 	ai_timestamp = 0;
 	eventCode = 0;
 
+	
+
 	while (!threadShouldExit())
 	{
 
@@ -609,7 +611,7 @@ void NIDAQmx::run()
 
 		}
 
-		fflush(stdout);
+		//fflush(stdout);
 
 	}
 

@@ -50,12 +50,20 @@ class NIDAQThread : public DataThread
 
 public:
 
+	/** Constructor */
 	NIDAQThread(SourceNode* sn);
+
+	/** Destructor */
 	~NIDAQThread();
 
-	bool updateBuffer();
+	/** Create the DataThread */
+	static DataThread* createDataThread(SourceNode* sn);
 
-	void updateChannels();
+	/** Create the custom editor */
+	std::unique_ptr<GenericEditor> createEditor(SourceNode* sn);
+
+	/** Not used -- buffer is updated by NIDAQComponents class */
+	bool updateBuffer();
 
 	/** Returns true if the data source is connected, false otherwise.*/
 	bool foundInputSource();
@@ -107,8 +115,6 @@ public:
 	int getNumAvailableDevices();
 	void selectFromAvailableDevices();
 
-	void selectDevice();
-
 	/** Sets the voltage range of the data source. */
 	void setVoltageRange(int rangeIndex);
 
@@ -118,50 +124,10 @@ public:
 	/** Returns the sample rate of the data source.*/
 	float getSampleRate();
 
-	/** DEPRECATED Returns the number of virtual subprocessors this source can generate */
-	// unsigned int getNumSubProcessors() const override;
-
-	/** DEPRECATED Returns the number of continuous headstage channels the data source can provide.*/
-	// int getNumDataOutputs(DataChannel::DataChannelTypes type, int subProcessorIdx) const override;
-
-	/** DEPRECATED Returns the number of TTL channels that each subprocessor generates*/
-	// int getNumTTLOutputs(int subProcessorIdx) const override;
-
-	/** DEPRECATED Returns the volts per bit of the data source.*/
-	// float getBitVolts(const DataChannel* chan) const override;
-
-	/** DEPRECATED 
-	// float getAdcBitVolts();
-
-	/** DEPRECATED Used to set default channel names.*/
-	// void setDefaultChannelNames() override;
-
-	/** DEPRECATED Used to override default channel names.*/
-	// bool usesCustomNames() const override;
-
-	/** DEPRECATED Toggles between internal and external triggering. */
-	// void setTriggerMode(bool trigger);
-
-	/** DEPRECATED Toggles between auto-restart setting. */
-	// void setAutoRestart(bool restart);
-
-	/** Sets the currently selected input */
-	void setSelectedInput();
-
-	/** Starts recording.*/
-	void startRecording();
-
-	/** Stops recording.*/
-	void stopRecording();
-
-	/** Set directory for input */
-	void setDirectoryForInput(int id, File directory);
-
-	/** Get directory for input */
-	File getDirectoryForInput(int id);
-
+	/** Responds to broadcast messages sent during acquisition */
 	void handleBroadcastMessage(String msg) override;
 
+	/** Responds to config messages sent while acquisition is stopped */
 	String handleConfigMessage(String msg) override;
 
 	CriticalSection* getMutex()
@@ -169,9 +135,7 @@ public:
 		return &displayMutex;
 	}
 
-	static DataThread* createDataThread(SourceNode* sn);
 
-	std::unique_ptr<GenericEditor> createEditor(SourceNode* sn);
 
 	friend class AIButton;
 	friend class DIButton;

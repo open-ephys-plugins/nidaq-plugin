@@ -154,7 +154,11 @@ private:
 class NIDAQEditor : public GenericEditor, public ComboBox::Listener, public Button::Listener
 {
 public:
+
+	/** Constructor */
 	NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* thread);
+
+	/** Destructor */
 	virtual ~NIDAQEditor();
 
 	void draw();

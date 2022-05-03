@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "nidaq-api/NIDAQmx.h"
 
 #define NUM_SOURCE_TYPES 4
-#define CHANNEL_BUFFER_SIZE 1000
+#define CHANNEL_BUFFER_SIZE 500
 #define MAX_ANALOG_CHANNELS 8
 #define NUM_SAMPLE_RATES 17
 #define MAX_DIGITAL_CHANNELS 8

@@ -153,9 +153,9 @@ void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChanne
 
 	}
 
-	LOGC("NIDAQ added ", sourceStreams.size(), " stream", (sourceStreams.size() == 1 ? "." : "s."));
-	LOGC("Found ", continuousChannels->size(), " analog input channels");
-	LOGC("Found ", eventChannels->size(), " digital line with ", eventChannels->getLast()->getMaxTTLBits(), " Digital Input channels");
+	//LOGC("NIDAQ added ", sourceStreams.size(), " stream", (sourceStreams.size() == 1 ? "." : "s."));
+	//LOGC("Found ", continuousChannels->size(), " analog input channels");
+	//LOGC("Found ", eventChannels->size(), " digital line with ", eventChannels->getLast()->getMaxTTLBits(), " Digital Input channels");
 
 }
 
@@ -334,9 +334,9 @@ XmlElement NIDAQThread::getInfoXml()
 /** Initializes data transfer.*/
 bool NIDAQThread::startAcquisition()
 {
-	//TODO:
+	
 	mNIDAQ->startThread();
-	this->startThread();
+
     return true;
 }
 
@@ -344,10 +344,6 @@ bool NIDAQThread::startAcquisition()
 bool NIDAQThread::stopAcquisition()
 {
 
-	if (isThreadRunning())
-	{
-		signalThreadShouldExit();
-	}
 	if (mNIDAQ->isThreadRunning())
 	{
 		mNIDAQ->signalThreadShouldExit();
