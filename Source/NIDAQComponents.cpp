@@ -281,7 +281,7 @@ void NIDAQmx::getAIChannels()
 			NIDAQ::int32 termCfgs;
 			NIDAQ::DAQmxGetPhysicalChanAITermCfgs(channel_list[i].toUTF8(), &termCfgs);
 
-			LOGD(channel_list[i].toUTF8(), " Terminal Config: ", termCfgs);
+			LOGD(channel_list[i].toRawUTF8(), " Terminal Config: ", termCfgs);
 
 			ai.add(AnalogIn(channel_list[i].toUTF8()));
 
@@ -337,7 +337,7 @@ Error:
 	}
 
 	if (DAQmxFailed(error))
-		LOGE("DAQmx Error: ", errBuff);
+		//LOGE("DAQmx Error: ", errBuff);
 	fflush(stdout);
 
 	return;
@@ -364,7 +364,7 @@ void NIDAQmx::getDIChannels()
 		channel_type.addTokens(channel_list[i], "/", "\"");
 		if (channel_list[i].length() > 0 && diCount++ < MAX_DIGITAL_CHANNELS)
 		{
-			LOGD(channel_list[i].toUTF8());
+			LOGD(channel_list[i].toRawUTF8());
 			di.add(DigitalIn(channel_list[i].toUTF8()));
 			diChannelEnabled.add(false);
 		}
@@ -547,6 +547,8 @@ void NIDAQmx::run()
 			arraySizeInSamps,
 			&ai_read,
 			NULL));
+
+		LOGD("arraySizeInSamps: ", arraySizeInSamps, "Samples read: ", ai_read);
 
 		if (getActiveDigitalLines() > 0)
 		{
