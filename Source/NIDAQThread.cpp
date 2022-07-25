@@ -116,8 +116,8 @@ void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChanne
 
 		currentStream->clearChannels();
 
-		//TODO: Maybe implement for each NIDAQ device
-		//StreamInfo info = streamInfo[i];
+		// TODO: Maybe implement for each NIDAQ device
+		// StreamInfo info = streamInfo[i];
 
 		for (int ch = 0; ch < mNIDAQ->aiChannelEnabled.size(); ch++)
 		{
