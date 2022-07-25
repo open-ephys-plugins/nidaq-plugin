@@ -472,7 +472,7 @@ NIDAQEditor::~NIDAQEditor()
 /** Respond to button presses */
 void NIDAQEditor::buttonClicked(Button* button)
 {
-	//LOG the action here?
+	buttonEvent(button);
 }
 
 void NIDAQEditor::comboBoxChanged(ComboBox* comboBox)
