@@ -114,6 +114,8 @@ void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChanne
 	{
 		DataStream* currentStream = sourceStreams[i];
 
+		currentStream->setName(getProductName());
+
 		currentStream->clearChannels();
 
 		// TODO: Maybe implement for each NIDAQ device

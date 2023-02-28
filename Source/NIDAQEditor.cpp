@@ -530,7 +530,7 @@ void NIDAQEditor::buttonEvent(Button* button)
 		if (!thread->isThreadRunning())
 		{
 			thread->selectFromAvailableDevices();
-			setDisplayName(thread->getProductName());
+			//setDisplayName(thread->getProductName());
 			draw();
 		}
 	}
