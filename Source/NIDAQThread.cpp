@@ -204,6 +204,8 @@ void NIDAQThread::selectFromAvailableDevices()
 		return;
 
 	swapConnection(productNames[selectedDeviceIndex - 1]);
+
+	sourceStreams.clear();
 }
 
 String NIDAQThread::getProductName() const
