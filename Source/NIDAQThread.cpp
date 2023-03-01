@@ -102,6 +102,24 @@ void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChanne
 		sourceStreams.add(new DataStream(settings));
 
 	}
+	else if (sourceStreams[0]->getSampleRate() != getSampleRate())
+	{
+
+		sourceStreams.clear();
+
+		DataStream::Settings settings
+		{
+			getProductName(),
+			"Analog input channels from a NIDAQ device",
+			"identifier",
+
+			getSampleRate()
+
+		};
+
+		sourceStreams.add(new DataStream(settings));
+
+	}
 
 	dataStreams->clear();
 	eventChannels->clear();
