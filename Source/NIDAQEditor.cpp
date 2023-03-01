@@ -537,15 +537,18 @@ void NIDAQEditor::buttonEvent(Button* button)
 }
 
 
-void NIDAQEditor::saveCustomParameters(XmlElement* xml)
+void NIDAQEditor::saveCustomParametersToXml(XmlElement* xml)
 {
 	xml->setAttribute("productName", thread->getProductName());
 }
 
 
-void NIDAQEditor::loadCustomParameters(XmlElement* xml)
+void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 {
+
 	String productName = xml->getStringAttribute("productName", "NIDAQmx");
+
+	LOGC("Loading custom parameters for: ", productName);
 	if (!thread->swapConnection(productName));
 		draw();
 }

@@ -169,8 +169,8 @@ public:
 	/** Respond to button presses */
 	void buttonClicked(Button* button) override;
 
-	void saveCustomParameters(XmlElement*);
-	void loadCustomParameters(XmlElement*);
+	void saveCustomParametersToXml(XmlElement*) override;
+	void loadCustomParametersFromXml(XmlElement*) override;
 
 private:
 
