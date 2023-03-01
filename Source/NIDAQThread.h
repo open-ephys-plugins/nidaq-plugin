@@ -103,7 +103,7 @@ public:
 	Array<String> getVoltageRanges();
 	int getVoltageRangeIndex();
 
-	Array<String> getSampleRates();
+	Array<float> getSampleRates();
 	int getSampleRateIndex();
 
 	void toggleAIChannel(int channelIndex);

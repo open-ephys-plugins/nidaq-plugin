@@ -418,10 +418,10 @@ void NIDAQEditor::draw()
 
 	sampleRateSelectBox = new ComboBox("SampleRateSelectBox");
 	sampleRateSelectBox->setBounds(xOffset, 39, 85, 20);
-	Array<String> sampleRates = t->getSampleRates();
+	Array<float> sampleRates = t->getSampleRates();
 	for (int i = 0; i < sampleRates.size(); i++)
 	{
-		sampleRateSelectBox->addItem(sampleRates[i], i + 1);
+		sampleRateSelectBox->addItem(String(sampleRates[i]) + " S/s", i + 1);
 	}
 	sampleRateSelectBox->setSelectedItemIndex(t->getSampleRateIndex(), false);
 	sampleRateSelectBox->addListener(this);
@@ -540,6 +540,8 @@ void NIDAQEditor::buttonEvent(Button* button)
 void NIDAQEditor::saveCustomParametersToXml(XmlElement* xml)
 {
 	xml->setAttribute("productName", thread->getProductName());
+	xml->setAttribute("sampleRate", thread->getSampleRate());
+	xml->setAttribute("voltageRange", thread->getVoltageRangeIndex());
 }
 
 
@@ -548,7 +550,35 @@ void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 
 	String productName = xml->getStringAttribute("productName", "NIDAQmx");
 
-	LOGC("Loading custom parameters for: ", productName);
+	// Load device
 	if (!thread->swapConnection(productName));
 		draw();
+
+	float sampleRate = xml->getStringAttribute("sampleRate", "0.0").getFloatValue();
+
+	// Load sample rate
+	if (sampleRate > 0.0f)
+	{
+		int idx = 0;
+		for (auto& sr : thread->getSampleRates())
+		{
+			if (sr == sampleRate)
+			{
+				thread->setSampleRate(idx);
+				sampleRateSelectBox->setSelectedItemIndex(thread->getSampleRateIndex(), false);
+				break;
+			}
+			idx++;
+		}
+	}
+
+	// Load voltage range
+	int voltageRange = xml->getStringAttribute("voltageRange", "-1").getIntValue();
+
+	if (voltageRange >= 0)
+	{
+		thread->setVoltageRange(voltageRange);
+		voltageRangeSelectBox->setSelectedItemIndex(thread->getVoltageRangeIndex(), false);
+	}
+
 }

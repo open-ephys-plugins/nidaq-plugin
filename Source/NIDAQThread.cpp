@@ -325,14 +325,9 @@ Array<String> NIDAQThread::getVoltageRanges()
 	return voltageRanges;
 }
 
-Array<String> NIDAQThread::getSampleRates()
+Array<float> NIDAQThread::getSampleRates()
 {
-	Array<String> sampleRates;
-	for (auto rate : mNIDAQ->sampleRates)
-	{
-		sampleRates.add(String(rate) + " S/s");
-	}
-	return sampleRates;
+	return mNIDAQ->sampleRates;
 }
 
 bool NIDAQThread::foundInputSource()
