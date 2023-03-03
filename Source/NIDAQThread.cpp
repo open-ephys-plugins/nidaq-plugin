@@ -243,7 +243,6 @@ void NIDAQThread::selectFromAvailableDevices()
 		}
 	}
 
-	sourceStreams.clear();
 }
 
 int NIDAQThread::swapConnection(String deviceName)
@@ -274,6 +273,8 @@ int NIDAQThread::swapConnection(String deviceName)
 
 			voltageRangeIndex = mNIDAQ->device->voltageRanges.size() - 1;
 			setVoltageRange(voltageRangeIndex);
+
+			sourceStreams.clear();
 
 			break;
 		}

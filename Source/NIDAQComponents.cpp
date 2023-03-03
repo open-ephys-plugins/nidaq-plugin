@@ -120,8 +120,6 @@ NIDAQmx::NIDAQmx(NIDAQDevice* device_)
 
 	connect();
 
-	//deviceIndex = dm->getDeviceIndexFromName(device->getName());
-
 	// Pre-define reasonable sample rates
 	float sample_rates[NUM_SAMPLE_RATES] = {
 		1000.0f, 1250.0f, 1500.0f,

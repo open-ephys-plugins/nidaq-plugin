@@ -341,9 +341,7 @@ void BackgroundLoader::run()
 NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t)
 	: GenericEditor(parentNode), thread(t)
 {
-
 	draw();
-
 }
 
 void NIDAQEditor::draw()
@@ -496,8 +494,11 @@ void NIDAQEditor::comboBoxChanged(ComboBox* comboBox)
 	{
 		if (!thread->isThreadRunning())
 		{
-			thread->setDeviceIndex(comboBox->getSelectedId() - 1);
-			CoreServices::updateSignalChain(this);
+			if (comboBox->getSelectedId() - 1 != thread->getDeviceIndex())
+			{
+				thread->swapConnection(thread->getDevices()[comboBox->getSelectedId() - 1]->getName());
+				draw();
+			}
 		}
 		else
 		{
