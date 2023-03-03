@@ -94,17 +94,22 @@ public:
 		OwnedArray<DeviceInfo>* devices,
 		OwnedArray<ConfigurationObject>* configurationObjects) override;
 
-	String getProductName() const;
+	String getDeviceName() const { return mNIDAQ->device->getName(); };
+	String getProductName() const { return mNIDAQ->device->productName; };
 
 	/** Input channel info */
 	int getNumAnalogInputs() const;
 	int getNumDigitalInputs() const;
 
-	Array<String> getVoltageRanges();
-	int getVoltageRangeIndex();
+	// Get a list of available devices
+	Array<NIDAQDevice*> getDevices();
+	int getDeviceIndex() { return deviceIndex; };
 
-	Array<float> getSampleRates();
-	int getSampleRateIndex();
+	Array<SettingsRange> getVoltageRanges();
+	int getVoltageRangeIndex() { return voltageRangeIndex; };
+
+	Array<NIDAQ::float64> getSampleRates();
+	int getSampleRateIndex() { return sampleRateIndex; };
 
 	void toggleAIChannel(int channelIndex);
 	void toggleDIChannel(int channelIndex);
@@ -114,6 +119,8 @@ public:
 
 	int getNumAvailableDevices();
 	void selectFromAvailableDevices();
+
+	void setDeviceIndex(int deviceIndex);
 
 	/** Sets the voltage range of the data source. */
 	void setVoltageRange(int rangeIndex);
@@ -135,8 +142,6 @@ public:
 		return &displayMutex;
 	}
 
-
-
 	friend class AIButton;
 	friend class DIButton;
 	friend class SourceTypeButton;
@@ -144,9 +149,6 @@ public:
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NIDAQThread);
 
 private:
-
-	/* Handle to NIDAQ API info */
-	NIDAQAPI api;
 
 	NIDAQEditor* editor;
 
@@ -162,13 +164,10 @@ private:
 	/* Array of source streams -- one per connected NIDAQ device */
 	OwnedArray<DataStream> sourceStreams;
 
-	/* Handle to input channels */
-	Array<AnalogIn> ai;
-	Array<DigitalIn> di;
-
 	/* Selectable device properties */
-	int sampleRateIndex;
-	int voltageRangeIndex;
+	int deviceIndex = 0;
+	int sampleRateIndex = 0;
+	int voltageRangeIndex = 0;
 
 	bool isRecording;
 

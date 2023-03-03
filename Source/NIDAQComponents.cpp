@@ -26,6 +26,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "NIDAQComponents.h"
 
+AnalogInput::AnalogInput(String name, NIDAQ::int32 termCfgs) : InputChannel(name)
+{
+
+	sourceTypes.clear();
+
+	if (termCfgs & DAQmx_Val_Bit_TermCfg_RSE)
+		sourceTypes.add(SOURCE_TYPE::RSE);
+	
+	if (termCfgs & DAQmx_Val_Bit_TermCfg_NRSE)
+		sourceTypes.add(SOURCE_TYPE::NRSE);
+
+	if (termCfgs & DAQmx_Val_Bit_TermCfg_Diff)
+		sourceTypes.add(SOURCE_TYPE::DIFF);
+
+	if (termCfgs & DAQmx_Val_Bit_TermCfg_PseudoDIFF)
+		sourceTypes.add(SOURCE_TYPE::PSEUDO_DIFF);
+
+}
+
 static int32 GetTerminalNameWithDevPrefix(NIDAQ::TaskHandle taskHandle, const char terminalName[], char triggerName[]);
 
 static int32 GetTerminalNameWithDevPrefix(NIDAQ::TaskHandle taskHandle, const char terminalName[], char triggerName[])
@@ -51,20 +70,10 @@ Error:
 	return error;
 }
 
-NIDAQComponent::NIDAQComponent() : serial_number(0) {}
-NIDAQComponent::~NIDAQComponent() {}
-
-void NIDAQAPI::getInfo()
-{
-	//TODO
-}
-
-NIDAQmxDeviceManager::NIDAQmxDeviceManager() {}
-
-NIDAQmxDeviceManager::~NIDAQmxDeviceManager() {}
-
 void NIDAQmxDeviceManager::scanForDevices()
 {
+
+	devices.clear();
 
 	char data[2048] = { 0 };
 	NIDAQ::DAQmxGetSysDevNames(data, sizeof(data));
@@ -76,47 +85,44 @@ void NIDAQmxDeviceManager::scanForDevices()
 	StringArray productList;
 
 	for (int i = 0; i < deviceList.size(); i++)
+	{
 		if (deviceList[i].length() > 0)
-			devices.add(deviceList[i].toUTF8());
+		{
+			String deviceName = deviceList[i].toUTF8();
+
+			/* Get product name */
+			char pname[2048] = { 0 };
+			NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceName), &pname[0], sizeof(pname));
+			devices.add(new NIDAQDevice(deviceName));
+			devices.getLast()->productName = String(&pname[0]);
+		}
+	}
 
 	if (!devices.size())
-		devices.add("SimulatedDevice"); 
+		devices.add(new NIDAQDevice("Simulated")); //TODO: Make SimulatedClass derived from NIDAQDevice
 
 }
 
-String NIDAQmxDeviceManager::getDeviceFromIndex(int index)
+int NIDAQmxDeviceManager::getDeviceIndexFromName(String name)
 {
-	return devices[index];
-}
 
-String NIDAQmxDeviceManager::getDeviceFromProductName(String productName)
-{
-	for (auto device : devices)
-	{
-		ScopedPointer<NIDAQmx> n = new NIDAQmx(STR2CHR(device));
-		if (n->getProductName() == productName)
-			return device;
-	}
-	return "";
+	for (int i = 0; i < devices.size(); i++)
+		if (devices[i]->getName() == name)
+			return i;
+
+	return -1;
 
 }
 
-int NIDAQmxDeviceManager::getNumAvailableDevices()
+NIDAQmx::NIDAQmx(NIDAQDevice* device_) 
+: Thread("NIDAQmx-" + String(device_->getName())), device(device_)
 {
-	return devices.size();
-}
-
-NIDAQmx::NIDAQmx() : Thread("NIDAQmx_Thread") {};
-
-NIDAQmx::NIDAQmx(const char* deviceName) 
-	: Thread("NIDAQmx_Thread"),
-	deviceName(deviceName)
-{
-
-	adcResolution = 0; //bits
 
 	connect();
 
+	//deviceIndex = dm->getDeviceIndexFromName(device->getName());
+
+	// Pre-define reasonable sample rates
 	float sample_rates[NUM_SAMPLE_RATES] = {
 		1000.0f, 1250.0f, 1500.0f,
 		2000.0f, 2500.0f,
@@ -133,77 +139,54 @@ NIDAQmx::NIDAQmx(const char* deviceName)
 		30000.0f
 	};
 
+	sampleRates.clear();
+
 	int idx = 0;
-	while (sample_rates[idx] <= sampleRateRange.smaxm && idx < NUM_SAMPLE_RATES)
-		sampleRates.add(sample_rates[idx++]); 
+	while (sample_rates[idx] <= device->sampleRateRange.max && idx < NUM_SAMPLE_RATES)
+		sampleRates.add(sample_rates[idx++]);
 
 	// Default to highest sample rate
-	samplerate = sampleRates[sampleRates.size() - 1];
+	sampleRateIndex = sampleRates.size() - 1;
 
 	// Default to largest voltage range
-	voltageRange = aiVRanges[aiVRanges.size() - 1];
+	voltageRangeIndex = device->voltageRanges.size() - 1;
 
-	// Enable all channels by default
-	for (int i = 0; i < aiChannelEnabled.size(); i++)
-		aiChannelEnabled.set(i, true);
-
-	for (int i = 0; i < diChannelEnabled.size(); i++)
-		diChannelEnabled.set(i, true);
-
-}
-
-NIDAQmx::~NIDAQmx() {
-}
-
-String NIDAQmx::getProductName()
-{
-	return productName;
-}
-
-String NIDAQmx::getSerialNumber()
-{
-	return String(serialNum);
 }
 
 void NIDAQmx::connect()
 {
 
+	String deviceName = device->getName();
+
 	if (deviceName == "SimulatedDevice")
 	{
-		isUSBDevice = false;
-		sampleRateRange = SRange(1000.0f, 30000.0f, 30000.0f);
-		aiVRanges.add(VRange(-10.0f, 10.0f));
-		productName = String("No Device Detected");
+
+		device->isUSBDevice = false;
+		device->sampleRateRange = SettingsRange(1000.0f, 30000.0f);
+		device->voltageRanges.add(SettingsRange(-10.0f, 10.0f));
+		device->productName = String("No Device Detected");
 
 	}
 	else
 	{
-		//LOGC("NIDAQmx");
+
 		/* Get category type */
-		NIDAQ::DAQmxGetDevProductCategory(STR2CHR(deviceName), &deviceCategory);
-		//LOGC("Device Category: ", (int) deviceCategory);
+		NIDAQ::DAQmxGetDevProductCategory(STR2CHR(deviceName), &device->deviceCategory);
+		LOGD("Product Category: ", device->deviceCategory);
 
-		/* Get product name */
-		char pname[2048] = { 0 };
-		NIDAQ::DAQmxGetDevProductType(STR2CHR(deviceName), &pname[0], sizeof(pname));
-		productName = String(&pname[0]);
-		//LOGC("Product Name: ", productName);
+		device->isUSBDevice = device->productName.contains("USB");
 
-		isUSBDevice = false;
-		if (productName.contains("USB"))
-			isUSBDevice = true;
+		NIDAQ::DAQmxGetDevProductNum(STR2CHR(deviceName), &device->productNum);
+		LOGD("Product Num: ", device->productNum);
 
-		NIDAQ::DAQmxGetDevProductNum(STR2CHR(deviceName), &productNum);
-		//LOGC("Product Num: ", productNum);
-
-		NIDAQ::DAQmxGetDevSerialNum(STR2CHR(deviceName), &serialNum);
-		//LOGC("Serial Num: ", serialNum);
+		NIDAQ::DAQmxGetDevSerialNum(STR2CHR(deviceName), &device->serialNum);
+		LOGD("Serial Num: ", device->serialNum);
 
 		/* Get simultaneous sampling supported */
 		NIDAQ::bool32 supported = false;
 		NIDAQ::DAQmxGetDevAISimultaneousSamplingSupported(STR2CHR(deviceName), &supported);
-		simAISamplingSupported = (supported == 1);
-		//printf("Simultaneous sampling %ssupported\n", simAISamplingSupported ? "" : "NOT ");
+		device->simAISamplingSupported = supported;
+		LOGD("Simultaneous sampling supported: ", supported ? "YES" : "NO");
 
 		/* Get device sample rates */
 		NIDAQ::float64 smin;
@@ -215,171 +198,159 @@ void NIDAQmx::connect()
 		NIDAQ::float64 smaxm;
 		NIDAQ::DAQmxGetDevAIMaxMultiChanRate(STR2CHR(deviceName), &smaxm);
 
-		getAIVoltageRanges();
-		getAIChannels();
-		getDIChannels();
+		NIDAQ::float64 data[512];
+		NIDAQ::DAQmxGetDevAIVoltageRngs(STR2CHR(deviceName), &data[0], sizeof(data));
 
-		if (!simAISamplingSupported)
-			smaxm = smaxs / ai.size();
+		// Get available voltage ranges
+		device->voltageRanges.clear();
+		LOGD("Detected voltage ranges: \n");
+		for (int i = 0; i < 512; i += 2)
+		{
+			NIDAQ::float64 vmin = data[i];
+			NIDAQ::float64 vmax = data[i + 1];
+			if (vmin == vmax || abs(vmin) < 1e-10 || vmax < 1e-2)
+				break;
+			LOGC("Vmin: ", vmin, " Vmax: ", vmax);
+			device->voltageRanges.add(SettingsRange(vmin, vmax));
+		}
 
-		sampleRateRange = SRange(smin, smaxs, smaxm);
+		//LOGC("Min sample rate: ", sampleRateRange.smin);
+		//LOGC("Max single channel sample rate: ", sampleRateRange.smaxs);
+		//LOGC("Max multi channel sample rate: ", sampleRateRange.smaxm);
 
-	}
+		NIDAQ::int32	error = 0;
+		char			errBuff[ERR_BUFF_SIZE] = { '\0' };
 
-	//LOGC("Min sample rate: ", sampleRateRange.smin);
-	//LOGC("Max single channel sample rate: ", sampleRateRange.smaxs);
-	//LOGC("Max multi channel sample rate: ", sampleRateRange.smaxm);
+		char ai_channel_data[2048];
+		NIDAQ::DAQmxGetDevAIPhysicalChans(STR2CHR(device->getName()), &ai_channel_data[0], sizeof(ai_channel_data));
 
-}
+		StringArray channel_list;
+		channel_list.addTokens(&ai_channel_data[0], ", ", "\"");
 
-void NIDAQmx::getAIVoltageRanges()
-{
+		int aiCount = 0;
+		ai.clear();
 
-	NIDAQ::float64 data[512];
-	NIDAQ::DAQmxGetDevAIVoltageRngs(STR2CHR(deviceName), &data[0], sizeof(data));
+		LOGD("Detected ", channel_list.size(), " analog input channels");
 
-	//printf("Detected voltage ranges:\n");
-	for (int i = 0; i < 512; i += 2)
-	{
-		NIDAQ::float64 vmin = data[i];
-		NIDAQ::float64 vmax = data[i + 1];
-		if (vmin == vmax || vmax < 1e-2)
-			break;
-		//printf("Vmin: %f Vmax: %f \n", vmin, vmax);
-		aiVRanges.add(VRange(vmin, vmax));
-	}
-
-	fflush(stdout);
-
-}
-
-void NIDAQmx::getAIChannels()
-{
-
-	NIDAQ::int32	error = 0;
-	char			errBuff[ERR_BUFF_SIZE] = { '\0' };
-
-	NIDAQ::TaskHandle adcResolutionQuery;
-	NIDAQ::DAQmxCreateTask("ADCResolutionQuery", &adcResolutionQuery);
-
-	char data[2048];
-	NIDAQ::DAQmxGetDevAIPhysicalChans(STR2CHR(deviceName), &data[0], sizeof(data));
-
-	StringArray channel_list;
-	channel_list.addTokens(&data[0], ", ", "\"");
-
-	int aiCount = 0;
-
-	VRange vRange = aiVRanges[aiVRanges.size() - 1];
-
-	for (int i = 0; i < channel_list.size(); i++)
-	{
-		if (channel_list[i].length() > 0 && aiCount++ < MAX_ANALOG_CHANNELS)
+		for (int i = 0; i < channel_list.size(); i++)
 		{
 
-			/* Get channel termination */
-			NIDAQ::int32 termCfgs;
-			NIDAQ::DAQmxGetPhysicalChanAITermCfgs(channel_list[i].toUTF8(), &termCfgs);
-
-			LOGD(channel_list[i].toRawUTF8(), " Terminal Config: ", termCfgs);
-
-			ai.add(AnalogIn(channel_list[i].toUTF8()));
-
-			terminalConfig.add(termCfgs);
-
-			if (termCfgs & DAQmx_Val_Bit_TermCfg_RSE)
+			if (channel_list[i].length() > 0 && aiCount < MAX_ANALOG_CHANNELS)
 			{
-				st.add(SOURCE_TYPE::RSE);
-			}
-			else if (termCfgs & DAQmx_Val_Bit_TermCfg_NRSE)
-			{
-				st.add(SOURCE_TYPE::NRSE);
-			}
-			else if (termCfgs & DAQmx_Val_Bit_TermCfg_Diff)
-			{
-				st.add(SOURCE_TYPE::DIFF);
-			}
-			else 
-			{
-				st.add(SOURCE_TYPE::PSEUDO_DIFF);
-			}
+				/* Get channel termination */
+				NIDAQ::int32 termCfgs;
+				NIDAQ::DAQmxGetPhysicalChanAITermCfgs(channel_list[i].toUTF8(), &termCfgs);
 
-			/* Get channel ADC resolution */
+				String name = channel_list[i].toRawUTF8();
+
+				String terminalConfigurations = String::toHexString(termCfgs);
+
+				ai.add(new AnalogInput(name, termCfgs));
+
+				ai.getLast()->setEnabled(true);
+
+				LOGD("Adding analog input channel: ", name, " with terminal config: ", " (", termCfgs, ") enabled: ", ai.getLast()->isEnabled() ? "YES" : "NO");
+
+				aiCount++;
+				
+			}
+		}
+
+		// TODO: Get ADC resolution for each voltage range (throwing error as is)
+		NIDAQ::TaskHandle adcResolutionQuery;
+
+		/*
+		NIDAQ::DAQmxCreateTask("ADCResolutionQuery", &adcResolutionQuery);
+
+		SettingsRange vRange;
+
+		for (int i = 0; i < device->voltageRanges.size(); i++)
+		{
+			vRange = device->voltageRanges[i];
+
 			DAQmxErrChk(NIDAQ::DAQmxCreateAIVoltageChan(
 				adcResolutionQuery,			//task handle
-				STR2CHR(ai[aiCount-1].id),	//NIDAQ physical channel name (e.g. dev1/ai1)
+				STR2CHR(ai[0]->name),	    //NIDAQ physical channel name (e.g. dev1/ai1)
 				"",							//user-defined channel name (optional)
 				DAQmx_Val_Cfg_Default,		//input terminal configuration
-				vRange.vmin,				//min input voltage
-				vRange.vmax,				//max input voltage
+				vRange.min,					//min input voltage
+				vRange.max,					//max input voltage
 				DAQmx_Val_Volts,			//voltage units
 				NULL));
 
-			DAQmxErrChk(NIDAQ::DAQmxGetAIResolution(adcResolutionQuery, channel_list[i].toUTF8(), &adcResolution));
-			aiChannelEnabled.add(true);
+			NIDAQ::float64 adcResolution;
+			DAQmxErrChk(NIDAQ::DAQmxGetAIResolution(adcResolutionQuery, STR2CHR(ai[0]->name), &adcResolution));
+
+			device->adcResolutions.add(adcResolution);
 
 		}
-	}
 
-	fflush(stdout);
-	NIDAQ::DAQmxStopTask(adcResolutionQuery);
-	NIDAQ::DAQmxClearTask(adcResolutionQuery);
+		NIDAQ::DAQmxStopTask(adcResolutionQuery);
+		NIDAQ::DAQmxClearTask(adcResolutionQuery);
+		*/
+
+		// Get Digital Input Channels
+
+		char di_channel_data[2048];
+		//NIDAQ::DAQmxGetDevTerminals(STR2CHR(deviceName), &data[0], sizeof(data)); //gets all terminals
+		//NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &data[0], sizeof(data));	//gets line name
+		NIDAQ::DAQmxGetDevDILines(STR2CHR(deviceName), &di_channel_data[0], sizeof(di_channel_data));	//gets ports on line
+		LOGD("Found digital inputs: ");
+
+		channel_list.clear();
+
+		channel_list.addTokens(&di_channel_data[0], ", ", "\"");
+
+		int diCount = 0;
+		di.clear();
+
+		for (int i = 0; i < channel_list.size(); i++)
+		{
+			StringArray channel_type;
+			channel_type.addTokens(channel_list[i], "/", "\"");
+			if (channel_list[i].length() > 0 && diCount++ < MAX_DIGITAL_CHANNELS)
+			{
+				String name = channel_list[i].toRawUTF8();
+				LOGD("Found digital input: ", name);
+				di.add(new InputChannel(name));
+				di.getLast()->setEnabled(true);
+			}
+		}
+
+		// Set sample rate range
+		NIDAQ::float64 smax = smaxm;
+		if (!device->simAISamplingSupported)
+			smax /= ai.size();
+
+		device->sampleRateRange = SettingsRange(smin, smax);
 
 Error:
 
-	if (DAQmxFailed(error))
-		NIDAQ::DAQmxGetExtendedErrorInfo(errBuff, ERR_BUFF_SIZE);
+		if (DAQmxFailed(error))
+			NIDAQ::DAQmxGetExtendedErrorInfo(errBuff, ERR_BUFF_SIZE);
 
-	if (adcResolutionQuery != 0) {
-		// DAQmx Stop Code
-		NIDAQ::DAQmxStopTask(adcResolutionQuery);
-		NIDAQ::DAQmxClearTask(adcResolutionQuery);
-	}
-
-	if (DAQmxFailed(error))
-		//LOGE("DAQmx Error: ", errBuff);
-	fflush(stdout);
-
-	return;
-
-}
-
-void NIDAQmx::getDIChannels()
-{
-
-	char data[2048];
-	//NIDAQ::DAQmxGetDevTerminals(STR2CHR(deviceName), &data[0], sizeof(data)); //gets all terminals
-	//NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &data[0], sizeof(data));	//gets line name
-	NIDAQ::DAQmxGetDevDILines(STR2CHR(deviceName), &data[0], sizeof(data));	//gets ports on line
-	LOGD("Found digital inputs: ");
-
-	StringArray channel_list;
-	channel_list.addTokens(&data[0], ", ", "\"");
-
-	int diCount = 0;
-
-	for (int i = 0; i < channel_list.size(); i++)
-	{
-		StringArray channel_type;
-		channel_type.addTokens(channel_list[i], "/", "\"");
-		if (channel_list[i].length() > 0 && diCount++ < MAX_DIGITAL_CHANNELS)
-		{
-			LOGD(channel_list[i].toRawUTF8());
-			di.add(DigitalIn(channel_list[i].toUTF8()));
-			diChannelEnabled.add(false);
+		if (adcResolutionQuery != 0) {
+			// DAQmx Stop Code
+			NIDAQ::DAQmxStopTask(adcResolutionQuery);
+			NIDAQ::DAQmxClearTask(adcResolutionQuery);
 		}
-	}
 
-	fflush(stdout);
+		if (DAQmxFailed(error))
+			LOGE("DAQmx Error: ", errBuff);
+		fflush(stdout);
+
+		return;
+
+	}
 
 }
 
 int NIDAQmx::getActiveDigitalLines()
 {
 	uint16 linesEnabled = 0;
-	for (int i = 0; i < diChannelEnabled.size(); i++)
+	for (int i = 0; i < di.size(); i++)
 	{
-		if (diChannelEnabled[i])
+		if (di[i]->isEnabled())
 			linesEnabled += pow(2, i);
 	}
 	return linesEnabled;
@@ -387,14 +358,8 @@ int NIDAQmx::getActiveDigitalLines()
 
 void NIDAQmx::toggleSourceType(int index)
 {
-
-	SOURCE_TYPE current = st[index];
-	int next = (static_cast<int>(current)+1) % NUM_SOURCE_TYPES;
-	SOURCE_TYPE source = static_cast<SOURCE_TYPE>(next);
-	while (!((1 << next) & terminalConfig[index]))
-		source = static_cast<SOURCE_TYPE>(++next % NUM_SOURCE_TYPES);
-	st.set(index,source);
-
+	SOURCE_TYPE current = ai[index]->getSourceType();
+	ai[index]->setSourceType((static_cast<int>(current)+1) % NUM_SOURCE_TYPES);
 }
 
 void NIDAQmx::run()
@@ -417,7 +382,7 @@ void NIDAQmx::run()
 	String usePort; //Temporary digital port restriction until software buffering is implemented
 
 	/* Create an analog input task */
-	if (isUSBDevice)
+	if (device->isUSBDevice)
 		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("AITask_USB" + getSerialNumber()), &taskHandleAI));
 	else
 		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("AITask_PXI" + getSerialNumber()), &taskHandleAI));
@@ -427,7 +392,7 @@ void NIDAQmx::run()
 	{
 		NIDAQ::int32 termConfig;
 
-		switch (st[i]) {
+		switch (ai[i]->getSourceType()) {
 		case SOURCE_TYPE::RSE:
 			termConfig = DAQmx_Val_RSE;
 		case SOURCE_TYPE::NRSE:
@@ -440,13 +405,15 @@ void NIDAQmx::run()
 			termConfig = DAQmx_Val_Cfg_Default;
 		}
 
+		SettingsRange voltageRange = device->voltageRanges[voltageRangeIndex];
+
 		DAQmxErrChk(NIDAQ::DAQmxCreateAIVoltageChan(
-			taskHandleAI,					//task handle
-			STR2CHR(ai[i].id),			//NIDAQ physical channel name (e.g. dev1/ai1)
+			taskHandleAI,				//task handle
+			STR2CHR(ai[i]->getName()),	//NIDAQ physical channel name (e.g. dev1/ai1)
 			"",							//user-defined channel name (optional)
 			termConfig,					//input terminal configuration
-			voltageRange.vmin,			//min input voltage
-			voltageRange.vmax,			//max input voltage
+			voltageRange.min,			//min input voltage
+			voltageRange.max,			//max input voltage
 			DAQmx_Val_Volts,			//voltage units
 			NULL));
 
@@ -456,7 +423,7 @@ void NIDAQmx::run()
 	DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
 		taskHandleAI,
 		"",													//source : NULL means use internal clock
-		samplerate,											//rate : samples per second per channel
+		getSampleRate(),									//rate : samples per second per channel
 		DAQmx_Val_Rising,									//activeEdge : (DAQmc_Val_Rising || DAQmx_Val_Falling)
 		DAQmx_Val_ContSamps,								//sampleMode : (DAQmx_Val_FiniteSamps || DAQmx_Val_ContSamps || DAQmx_Val_HWTimedSinglePoint)
 		MAX_ANALOG_CHANNELS * CHANNEL_BUFFER_SIZE));		//sampsPerChanToAcquire : 
@@ -477,7 +444,7 @@ void NIDAQmx::run()
 	NIDAQ::TaskHandle	taskHandleDI = 0;
 
 	char ports[2048];
-	NIDAQ::DAQmxGetDevDIPorts(STR2CHR(deviceName), &ports[0], sizeof(ports));
+	NIDAQ::DAQmxGetDevDIPorts(STR2CHR(device->getName()), &ports[0], sizeof(ports));
 
 	/* For now, restrict max num digital inputs until software buffering is implemented */
 	if (MAX_DIGITAL_CHANNELS <= 8)
@@ -488,7 +455,7 @@ void NIDAQmx::run()
 	}
 
 	/* Create a digital input task using device serial number to gurantee unique task name per device */
-	if (isUSBDevice)
+	if (device->isUSBDevice)
 		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_USB"+getSerialNumber()), &taskHandleDI));
 	else
 		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_PXI"+getSerialNumber()), &taskHandleDI));
@@ -500,12 +467,13 @@ void NIDAQmx::run()
 		"",
 		DAQmx_Val_ChanForAllLines));
 
+	LOGD("Is USB Device: ", device->isUSBDevice);
 	
-	if (!isUSBDevice) //USB devices do not have an internal clock and instead use CPU, so we can't configure the sample clock timing
+	if (!device->isUSBDevice) //USB devices do not have an internal clock and instead use CPU, so we can't configure the sample clock timing
 		DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
 			taskHandleDI,							//task handle
 			trigName,								//source : NULL means use internal clock, we will sync to analog input clock
-			samplerate,								//rate : samples per second per channel
+			getSampleRate(),				//rate : samples per second per channel
 			DAQmx_Val_Rising,						//activeEdge : (DAQmc_Val_Rising || DAQmx_Val_Falling)
 			DAQmx_Val_ContSamps,					//sampleMode : (DAQmx_Val_FiniteSamps || DAQmx_Val_ContSamps || DAQmx_Val_HWTimedSinglePoint)
 			CHANNEL_BUFFER_SIZE));					//sampsPerChanToAcquire : want to sync with analog samples per channel
@@ -519,7 +487,7 @@ void NIDAQmx::run()
 	DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleAI));
 
 	NIDAQ::int32 numSampsPerChan;
-	if (isUSBDevice)
+	if (device->isUSBDevice)
 		numSampsPerChan = 100;
 	else
 		numSampsPerChan = CHANNEL_BUFFER_SIZE;
@@ -532,8 +500,6 @@ void NIDAQmx::run()
 
 	ai_timestamp = 0;
 	eventCode = 0;
-
-	
 
 	while (!threadShouldExit())
 	{
@@ -552,7 +518,7 @@ void NIDAQmx::run()
 
 		if (getActiveDigitalLines() > 0)
 		{
-			if (isUSBDevice)
+			if (device->isUSBDevice)
 				DAQmxErrChk(NIDAQ::DAQmxReadDigitalU32(
 					taskHandleDI,
 					numSampsPerChan,
@@ -595,7 +561,7 @@ void NIDAQmx::run()
 			int channel = i % MAX_ANALOG_CHANNELS;
 
 			aiSamples[channel] = 0;
-			if (aiChannelEnabled[channel])
+			if (ai[channel]->isEnabled())
 				aiSamples[channel] = ai_data[i];
 
 			if (i % MAX_ANALOG_CHANNELS == 0)
@@ -603,7 +569,7 @@ void NIDAQmx::run()
 				ai_timestamp++;
 				if (getActiveDigitalLines() > 0)
 				{
-					if (isUSBDevice)
+					if (device->isUSBDevice)
 						eventCode = di_data_32[count++] & getActiveDigitalLines();
 					else
 						eventCode = di_data_8[count++] & getActiveDigitalLines();
@@ -651,53 +617,3 @@ Error:
 	return;
 
 }
-
-InputChannel::InputChannel()
-{
-
-}
-
-InputChannel::InputChannel(String id) : id(id), enabled(true)
-{
-}
-
-InputChannel::~InputChannel()
-{
-}
-
-void InputChannel::setEnabled(bool enable)
-{
-	enabled = enable;
-}
-
-AnalogIn::AnalogIn()
-{
-}
-
-AnalogIn::AnalogIn(String id) : InputChannel(id)
-{
-	
-}
-
-AnalogIn::~AnalogIn()
-{
-
-}
-
-DigitalIn::DigitalIn(String id) : InputChannel(id)
-{
-
-}
-
-DigitalIn::DigitalIn()
-{
-
-}
-
-DigitalIn::~DigitalIn()
-{
-
-}
-
-
-

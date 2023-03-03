@@ -41,63 +41,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class NIDAQmx;
 class InputChannel;
-class AnalogIn;
-class DigitalIn;
+class AnalogInput;
+class DigitalInput;
 class Trigger;
 class Counter;
 class UserDefined;
-
-class NIDAQComponent
-{
-public:
-	NIDAQComponent();
-	~NIDAQComponent();
-	int serial_number;
-	virtual void getInfo() = 0;
-};
-
-/* API */
-
-class NIDAQAPI
-{
-public:
-	void getInfo();
-};
-
-class NIDAQmxDeviceManager
-{
-public:
-	NIDAQmxDeviceManager();
-	~NIDAQmxDeviceManager();
-
-	void scanForDevices();
-
-	String getDeviceFromIndex(int deviceIndex);
-	String getDeviceFromProductName(String productName);
-
-	int getNumAvailableDevices();
-
-	friend class NIDAQThread;
-
-private:
-	int selectedDeviceIndex;
-	StringArray devices;
-	
-};
-
-struct VRange {
-	NIDAQ::float64 vmin, vmax;
-	VRange() : vmin(0), vmax(0) {}
-	VRange(NIDAQ::float64 rmin, NIDAQ::float64 rmax)
-		: vmin(rmin), vmax(rmax) {}
-};
-
-struct SRange {
-	NIDAQ::float64 smin, smaxs, smaxm;
-	SRange() : smin(0), smaxs(0), smaxm(0) {}
-	SRange(NIDAQ::float64 smin, NIDAQ::float64 smaxs, NIDAQ::float64 smaxm)
-		: smin(smin), smaxs(smaxs), smaxm(smaxm) {}
-};
 
 enum SOURCE_TYPE {
 	RSE = 0,
@@ -106,57 +54,151 @@ enum SOURCE_TYPE {
 	PSEUDO_DIFF
 };
 
-class NIDAQmx : public Thread
+struct SettingsRange {
+	NIDAQ::float64 min, max;
+	SettingsRange() : min(0), max(0) {}
+	SettingsRange(NIDAQ::float64 min_, NIDAQ::float64 max_)
+		: min(min_), max(max_) {}
+};
+
+class InputChannel
+{
+public:
+	InputChannel(String name_) : name(name_) {};
+	InputChannel() : name("") {};
+	~InputChannel() {};
+
+	String getName() { return name; }
+
+	void setEnabled(bool) { enabled = true; }
+	bool isEnabled() { return enabled; }
+
+private:
+	String name;
+	bool enabled = false;
+};
+
+class AnalogInput : public InputChannel
+{
+
+public:
+	AnalogInput(String name, NIDAQ::int32 terminalConfig);
+	AnalogInput() : InputChannel() {};
+	~AnalogInput() {};
+
+	SOURCE_TYPE getSourceType() { return sourceTypes[sourceTypeIndex]; }
+	void setSourceType(int index) { sourceTypeIndex = index; }
+
+private:
+	int sourceTypeIndex = 0;
+	Array<SOURCE_TYPE> sourceTypes;
+
+};
+
+class NIDAQDevice
+{
+
+public:
+
+	NIDAQDevice(String name_) : name(name_) {};
+	NIDAQDevice() {};
+	~NIDAQDevice() {};
+
+	String getName() { return name; }
+
+	String productName;
+
+	bool isUSBDevice;
+	bool simAISamplingSupported;
+
+	NIDAQ::int32 deviceCategory;
+	NIDAQ::uInt32 productNum;
+	NIDAQ::uInt32 serialNum;
+	NIDAQ::uInt32 numAIChannels;
+	NIDAQ::uInt32 numAOChannels;
+	NIDAQ::uInt32 numDIChannels;
+	NIDAQ::uInt32 numDOChannels;
+
+	SettingsRange sampleRateRange;
+
+	Array<SettingsRange> voltageRanges;
+	Array<NIDAQ::float64> adcResolutions;
+
+private:
+
+	String name;
+
+};
+
+class NIDAQmxDeviceManager
 {
 public:
 
-	NIDAQmx();
-	NIDAQmx(const char* deviceName);
-	~NIDAQmx();
+	NIDAQmxDeviceManager() {};
+	~NIDAQmxDeviceManager() {};
 
-	void connect(); 
+	void scanForDevices();
 
-	String getProductName();
-	String getSerialNumber();
+	int getNumAvailableDevices() { return devices.size(); }
 
-	void getAIChannels();
-	void getAIVoltageRanges();
-	void getDIChannels();
+	int getDeviceIndexFromName(String deviceName);
+	NIDAQDevice* getDeviceAtIndex(int index) { return devices[index]; }
 
-	SOURCE_TYPE getSourceTypeForInput(int index);
-	void toggleSourceType(int id);
-
-	int getActiveDigitalLines();
-
-	void run();
+	NIDAQDevice* getDeviceFromName(String deviceName);
 
 	friend class NIDAQThread;
 
 private:
 
-	String				deviceName;
-	String				productName;
-	NIDAQ::int32		deviceCategory;
-	NIDAQ::uInt32		productNum;
-	NIDAQ::uInt32		serialNum;
-	bool				isUSBDevice;
-	bool				simAISamplingSupported;
-	NIDAQ::float64		adcResolution;
-	SRange 				sampleRateRange;
+	OwnedArray<NIDAQDevice> devices;
+	int activeDeviceIndex;
+};
 
-	Array<VRange>		aiVRanges;
-	VRange				voltageRange;
+class NIDAQmx : public Thread
+{
+public:
 
-	Array<float>		sampleRates;
-	float				samplerate;
+	NIDAQmx(NIDAQDevice* device_);
+	~NIDAQmx() {};
 
-	Array<AnalogIn> 	ai;
-	Array<NIDAQ::int32> terminalConfig;
-	Array<SOURCE_TYPE>  st;
-	Array<bool>			aiChannelEnabled;
+	/* Pointer to the active device */
+	NIDAQDevice* device;
 
-	Array<DigitalIn> 	di;
-	Array<bool>			diChannelEnabled;
+	/* Connects to the active device */
+	void connect(); 
+
+	String getProductName() { return device->productName; };
+	String getSerialNumber() { return String(device->serialNum); };
+
+	void getNumAnalogInputs();
+	int getActiveDigitalLines();
+
+	NIDAQ::float64 getSampleRate() { return sampleRates[sampleRateIndex]; };
+	SettingsRange getVoltageRange() { return device->voltageRanges[voltageRangeIndex]; };
+
+	SOURCE_TYPE getSourceTypeForInput(int analogIntputIndex);
+
+	void setSampleRate(int index) { sampleRateIndex = index; };
+	void setVoltageRange(int index) { voltageRangeIndex = index; };
+	void toggleSourceType(int analogInputIndex);
+
+	void run();
+
+	Array<NIDAQ::float64> sampleRates;
+
+	OwnedArray<AnalogInput> 	ai;
+	OwnedArray<InputChannel> 	di;
+
+	friend class NIDAQThread;
+
+private:
+
+	/* Manages connected NIDAQ devices */
+	ScopedPointer<NIDAQmxDeviceManager> dm;
+
+	int deviceIndex = 0;
+	int sampleRateIndex = 0;
+	int voltageRangeIndex = 0;
 
 	NIDAQ::float64		ai_data[CHANNEL_BUFFER_SIZE * MAX_ANALOG_CHANNELS];
 	NIDAQ::uInt8		di_data_8[CHANNEL_BUFFER_SIZE];  //PXI devices use 8-bit read
@@ -167,60 +209,6 @@ private:
 
 	DataBuffer* aiBuffer;
 
-};
-
-/* Inputs */ 
-
-class InputChannel
-{
-public:
-	InputChannel();
-	InputChannel(String id);
-	~InputChannel();
-
-	void setSampleRate(int rateIndex);
-	int getSampleRate();
-
-	void setEnabled(bool);
-
-	void startAcquisition();
-	void stopAcquisition();
-
-	void setSavingDirectory(File);
-	File getSavingDirectory();
-
-	float getFillPercentage();
-
-	friend class NIDAQmx;
-	
-private:
-	String id;
-	bool enabled;
-	File savingDirectory;
-
-};
-
-class AnalogIn : public InputChannel
-{
-
-public:
-	AnalogIn();
-	AnalogIn(String id);
-	~AnalogIn();
-
-	Array<SOURCE_TYPE> getTerminalConfig();
-
-private:
-	NIDAQ::int32 terminalConfig;
-};
-
-class DigitalIn : public InputChannel
-{
-public:
-	DigitalIn(String id);
-	DigitalIn();
-	~DigitalIn();
-private:
 };
 
 #endif  // __NIDAQCOMPONENTS_H__

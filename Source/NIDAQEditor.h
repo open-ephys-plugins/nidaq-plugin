@@ -178,6 +178,7 @@ private:
 	OwnedArray<TextButton> sourceTypeButtons;
 	OwnedArray<DIButton> diButtons;
 
+	ScopedPointer<ComboBox> deviceSelectBox;
 	ScopedPointer<ComboBox> sampleRateSelectBox;
 	ScopedPointer<ComboBox> voltageRangeSelectBox;
 	ScopedPointer<FifoMonitor> fifoMonitor;

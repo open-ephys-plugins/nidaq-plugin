@@ -126,8 +126,10 @@ void EditorBackground::paint(Graphics& g)
 		float settingsOffsetX = diChanOffsetX + ((nDI % maxChannelsPerColumn == 0 ? 0 : 1) + nDI / diChannelsPerColumn) * paddingX * diChanWidth + 5;
 		g.setColour(Colours::darkgrey);
 		g.setFont(10);
-		g.drawText(String("SAMPLE RATE"), settingsOffsetX, 13, 100, 10, Justification::centredLeft);
-		g.drawText(String("AI VOLTAGE RANGE"), settingsOffsetX, 45, 100, 10, Justification::centredLeft);
+		
+		g.drawText(String("DEVICE"), settingsOffsetX, 13, 100, 10, Justification::centredLeft);
+		g.drawText(String("SAMPLE RATE"), settingsOffsetX, 45, 100, 10, Justification::centredLeft);
+		g.drawText(String("AI VOLTAGE RANGE"), settingsOffsetX, 77, 100, 10, Justification::centredLeft);
 
 		/*
 		g.drawText(String("USAGE"), settingsOffsetX, 77, 100, 10, Justification::centredLeft);
@@ -190,7 +192,7 @@ int AIButton::getId()
 void AIButton::setEnabled(bool enable)
 {
 	enabled = enable;
-	thread->ai[id].setEnabled(enabled);
+	thread->mNIDAQ->ai[id]->setEnabled(enabled);
 }
 
 void AIButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
@@ -241,7 +243,7 @@ int DIButton::getId()
 void DIButton::setEnabled(bool enable)
 {
 	enabled = enable;
-	thread->ai[id].setEnabled(enabled);
+	thread->mNIDAQ->ai[id]->setEnabled(enabled);
 }
 
 void DIButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
@@ -352,7 +354,7 @@ void NIDAQEditor::draw()
 	int nAI;
 	int nDI;
 
-	if (t->getProductName() == "No Device Detected")
+	if (t->getDeviceName() == "Simulated Device")
 	{
 		nAI = 8;
 		nDI = 8;
@@ -416,9 +418,20 @@ void NIDAQEditor::draw()
 
 	xOffset = xOffset + 25;
 
+	deviceSelectBox = new ComboBox("DeviceSelectBox");
+	deviceSelectBox->setBounds(xOffset, 39, 85, 20);
+	Array<NIDAQDevice*> devices = t->getDevices();
+	for (int i = 0; i < t->getNumAvailableDevices(); i++)
+	{
+		deviceSelectBox->addItem(devices[i]->productName, i + 1);
+	}
+	deviceSelectBox->setSelectedItemIndex(t->getDeviceIndex(), false);
+	deviceSelectBox->addListener(this);
+	addAndMakeVisible(deviceSelectBox);
+
 	sampleRateSelectBox = new ComboBox("SampleRateSelectBox");
-	sampleRateSelectBox->setBounds(xOffset, 39, 85, 20);
-	Array<float> sampleRates = t->getSampleRates();
+	sampleRateSelectBox->setBounds(xOffset, 70, 85, 20);
+	Array<NIDAQ::float64> sampleRates = t->getSampleRates();
 	for (int i = 0; i < sampleRates.size(); i++)
 	{
 		sampleRateSelectBox->addItem(String(sampleRates[i]) + " S/s", i + 1);
@@ -428,11 +441,12 @@ void NIDAQEditor::draw()
 	addAndMakeVisible(sampleRateSelectBox);
 
 	voltageRangeSelectBox = new ComboBox("VoltageRangeSelectBox");
-	voltageRangeSelectBox->setBounds(xOffset, 70, 85, 20);
-	Array<String> voltageRanges = t->getVoltageRanges();
+	voltageRangeSelectBox->setBounds(xOffset, 101, 85, 20);
+	Array<SettingsRange> voltageRanges = t->getVoltageRanges();
 	for (int i = 0; i < voltageRanges.size(); i++)
 	{
-		voltageRangeSelectBox->addItem(voltageRanges[i], i + 1);
+		String rangeString = String(voltageRanges[i].min) + " - " + String(voltageRanges[i].max) + " V";
+		voltageRangeSelectBox->addItem(rangeString, i + 1);
 	}
 	voltageRangeSelectBox->setSelectedItemIndex(t->getVoltageRangeIndex(), false);
 	voltageRangeSelectBox->addListener(this);
@@ -478,7 +492,20 @@ void NIDAQEditor::buttonClicked(Button* button)
 void NIDAQEditor::comboBoxChanged(ComboBox* comboBox)
 {
 
-	if (comboBox == sampleRateSelectBox)
+	if (comboBox == deviceSelectBox)
+	{
+		if (!thread->isThreadRunning())
+		{
+			thread->setDeviceIndex(comboBox->getSelectedId() - 1);
+			CoreServices::updateSignalChain(this);
+		}
+		else
+		{
+			comboBox->setSelectedItemIndex(thread->getDeviceIndex());
+		}
+
+	} 
+	else if (comboBox == sampleRateSelectBox)
 	{
 		if (!thread->isThreadRunning())
 		{
@@ -539,7 +566,7 @@ void NIDAQEditor::buttonEvent(Button* button)
 
 void NIDAQEditor::saveCustomParametersToXml(XmlElement* xml)
 {
-	xml->setAttribute("productName", thread->getProductName());
+	xml->setAttribute("deviceName", thread->getDeviceName());
 	xml->setAttribute("sampleRate", thread->getSampleRate());
 	xml->setAttribute("voltageRange", thread->getVoltageRangeIndex());
 }
@@ -548,11 +575,19 @@ void NIDAQEditor::saveCustomParametersToXml(XmlElement* xml)
 void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 {
 
-	String productName = xml->getStringAttribute("productName", "NIDAQmx");
+	String deviceToLoad = xml->getStringAttribute("deviceName", "NIDAQmx");
 
 	// Load device
-	if (!thread->swapConnection(productName));
-		draw();
+	if (!deviceToLoad.equalsIgnoreCase("NIDAQmx"))
+	{
+		int deviceIdx = thread->swapConnection(deviceToLoad);
+		if (deviceIdx >= 0)
+		{
+			thread->setDeviceIndex(deviceIdx);
+			deviceSelectBox->setSelectedItemIndex(thread->getDeviceIndex(), false);
+			draw();
+		}
+	}
 
 	float sampleRate = xml->getStringAttribute("sampleRate", "0.0").getFloatValue();
 
@@ -564,6 +599,7 @@ void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 		{
 			if (sr == sampleRate)
 			{
+				LOGC("Setting saved sample rate: " + String(sampleRate) + " (" + String(idx) + ")");
 				thread->setSampleRate(idx);
 				sampleRateSelectBox->setSelectedItemIndex(thread->getSampleRateIndex(), false);
 				break;
@@ -573,11 +609,11 @@ void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 	}
 
 	// Load voltage range
-	int voltageRange = xml->getStringAttribute("voltageRange", "-1").getIntValue();
+	int voltageRangeIndex = xml->getStringAttribute("voltageRange", "-1").getIntValue();
 
-	if (voltageRange >= 0)
+	if (voltageRangeIndex >= 0)
 	{
-		thread->setVoltageRange(voltageRange);
+		thread->setVoltageRange(voltageRangeIndex);
 		voltageRangeSelectBox->setSelectedItemIndex(thread->getVoltageRangeIndex(), false);
 	}
 
