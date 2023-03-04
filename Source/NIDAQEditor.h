@@ -44,6 +44,34 @@ class NIDAQInterface;
 class Annotation;
 class ColorSelector;
 
+class PopupConfigurationWindow : public Component, public ComboBox::Listener
+{
+
+public:
+    
+    /** Constructor */
+    PopupConfigurationWindow(NIDAQEditor* editor);
+
+    /** Destructor */
+    ~PopupConfigurationWindow() { }
+
+	void comboBoxChanged(ComboBox*);
+
+private:
+
+	NIDAQEditor* editor;
+
+    ScopedPointer<Label>  analogLabel;
+    ScopedPointer<ComboBox> analogChannelCountSelect;
+
+	ScopedPointer<Label>  digitalLabel;
+	ScopedPointer<ComboBox> digitalChannelCountSelect;
+
+	ScopedPointer<Label>  digitalReadLabel;
+	ScopedPointer<ComboBox> digitalReadSelect;
+
+};
+
 class EditorBackground : public Component
 {
 public:
@@ -169,6 +197,12 @@ public:
 	/** Respond to button presses */
 	void buttonClicked(Button* button) override;
 
+	void updateSettings(int analogCount, int digitalCount, int digitalRead);
+
+	int getTotalAvailableAnalogInputs() { return thread->getTotalAvailableAnalogInputs(); };
+	int getTotalAvailableDigitalInputs() { return thread-> getTotalAvailableDigitalInputs(); };
+	//int getDigitalReadSize() { return thread-> getDigitalReadSize(); };
+
 	void saveCustomParametersToXml(XmlElement*) override;
 	void loadCustomParametersFromXml(XmlElement*) override;
 
@@ -183,12 +217,14 @@ private:
 	ScopedPointer<ComboBox> voltageRangeSelectBox;
 	ScopedPointer<FifoMonitor> fifoMonitor;
 
-	ScopedPointer<UtilityButton> swapDeviceButton;
+	ScopedPointer<UtilityButton> configureDeviceButton;
 
 	Array<File> savingDirectories;
 
 	ScopedPointer<BackgroundLoader> uiLoader;
 	ScopedPointer<EditorBackground> background;
+
+	PopupConfigurationWindow* currentConfigWindow;
 
 	NIDAQThread* thread;
 

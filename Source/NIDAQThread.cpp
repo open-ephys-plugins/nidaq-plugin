@@ -205,11 +205,6 @@ int NIDAQThread::openConnection()
 
 }
 
-int NIDAQThread::getNumAvailableDevices()
-{
-	return dm->getNumAvailableDevices();
-}
-
 void NIDAQThread::selectFromAvailableDevices()
 {
 
@@ -298,16 +293,6 @@ SOURCE_TYPE NIDAQThread::getSourceTypeForInput(int index)
 
 void NIDAQThread::closeConnection()
 {
-}
-
-int NIDAQThread::getNumAnalogInputs() const
-{
-	return mNIDAQ->ai.size();
-}
-
-int NIDAQThread::getNumDigitalInputs() const
-{
-	return mNIDAQ->di.size();
 }
 
 void NIDAQThread::toggleAIChannel(int index)

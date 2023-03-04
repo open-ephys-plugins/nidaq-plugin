@@ -97,9 +97,13 @@ public:
 	String getDeviceName() const { return mNIDAQ->device->getName(); };
 	String getProductName() const { return mNIDAQ->device->productName; };
 
+	int getTotalAvailableAnalogInputs() const { return mNIDAQ->device->numAIChannels; }; const
+	int getTotalAvailableDigitalInputs() const { return mNIDAQ->device->numDIChannels; }; const
+	//int getDigitalReadSize() const { return mNIDAQ->device->getDigitalReadSize(); };
+
 	/** Input channel info */
-	int getNumAnalogInputs() const;
-	int getNumDigitalInputs() const;
+	int getNumAnalogInputs() { return mNIDAQ->ai.size(); };
+	int getNumDigitalInputs() { return mNIDAQ->di.size(); };
 
 	// Get a list of available devices
 	Array<NIDAQDevice*> getDevices();
@@ -117,7 +121,7 @@ public:
 	SOURCE_TYPE getSourceTypeForInput(int index);
 	void toggleSourceType(int id);
 
-	int getNumAvailableDevices();
+	int getNumAvailableDevices() { return dm->getNumAvailableDevices(); };
 	void selectFromAvailableDevices();
 
 	void setDeviceIndex(int deviceIndex);

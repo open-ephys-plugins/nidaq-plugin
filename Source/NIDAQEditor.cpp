@@ -337,9 +337,66 @@ void BackgroundLoader::run()
 
 }
 
+PopupConfigurationWindow::PopupConfigurationWindow(NIDAQEditor* editor_)
+    : editor(editor_)
+{
+    //tableHeader.reset(new TableHeaderComponent());
+
+	analogLabel = new Label ("Analog", "Analog Inputs: ");
+	analogLabel->setFont(Font(16.0f, Font::bold));
+	analogLabel->setColour(Label::textColourId, Colours::white);
+    analogLabel->setBounds (2, 8, 110, 20);
+    addAndMakeVisible(analogLabel);
+
+    analogChannelCountSelect = new ComboBox ("Analog Count Selector");
+	for (int i = 0; i < editor->getTotalAvailableAnalogInputs(); i+=8)
+		analogChannelCountSelect->addItem(String(i), i / 8 + 1);
+    analogChannelCountSelect->setBounds (115, 8, 60, 20);
+    analogChannelCountSelect->addListener (this);
+    addAndMakeVisible (analogChannelCountSelect);
+
+	digitalLabel = new Label ("Digital", "Digital Inputs: ");
+	digitalLabel->setColour(Label::textColourId, Colours::white);
+    digitalLabel->setBounds (2, 33, 110, 20);
+    addAndMakeVisible(digitalLabel);
+
+    digitalChannelCountSelect = new ComboBox ("Digital Count Selector");
+	for (int i = 0; i < editor->getTotalAvailableDigitalInputs(); i+=8)
+		digitalChannelCountSelect->addItem(String(8*i), i / 8 + 1);
+    digitalChannelCountSelect->setBounds (115, 33, 60, 20);
+    digitalChannelCountSelect->addListener (this);
+    addAndMakeVisible (digitalChannelCountSelect);
+
+	digitalReadLabel = new Label ("Digital Read", "Digital Read: ");
+	digitalReadLabel->setColour(Label::textColourId, Colours::white);
+	digitalReadLabel->setBounds (2, 58, 110, 20);
+	addAndMakeVisible(digitalReadLabel);
+
+	digitalReadSelect = new ComboBox("Digital Read Selector");
+	Array<int> digitalReadOptions = { 8, 32 };
+	for (int i = 0; i < 2; i++)
+		digitalReadSelect->addItem(String(digitalReadOptions[i]) + " bits", i + 1);
+	//digitalReadSelect->setSelectedId(editor->getDigitalReadSize());
+	digitalReadSelect->setBounds(115, 58, 60, 20);
+	digitalReadSelect->addListener(this);
+	addAndMakeVisible(digitalReadSelect);
+
+    setSize(180, 80);
+
+}
+
+void PopupConfigurationWindow::comboBoxChanged(ComboBox* comboBox)
+{
+	int numAnalogInputs = analogChannelCountSelect->getSelectedId() * 8;
+	int numDigitalInputs = digitalChannelCountSelect->getSelectedId() * 8;
+	int digitalRead = digitalReadSelect->getSelectedId(); //0 - 8-bit, 1 - 32-bit
+
+	//TODO:
+	//editor->update(numAnalogInputs, numDigitalInputs, digitalRead);
+}
 
 NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t)
-	: GenericEditor(parentNode), thread(t)
+	: GenericEditor(parentNode), thread(t), currentConfigWindow(nullptr)
 {
 	draw();
 }
@@ -427,6 +484,9 @@ void NIDAQEditor::draw()
 	deviceSelectBox->addListener(this);
 	addAndMakeVisible(deviceSelectBox);
 
+	if (t->getNumAvailableDevices() == 1)
+		deviceSelectBox->setEnabled(false);
+
 	sampleRateSelectBox = new ComboBox("SampleRateSelectBox");
 	sampleRateSelectBox->setBounds(xOffset, 70, 85, 20);
 	Array<NIDAQ::float64> sampleRates = t->getSampleRates();
@@ -454,14 +514,11 @@ void NIDAQEditor::draw()
 	fifoMonitor->setBounds(xOffset + 2, 105, 70, 12);
 	//addAndMakeVisible(fifoMonitor);
 
-	if (t->getNumAvailableDevices() > 1)
-	{
-		swapDeviceButton = new UtilityButton("...", Font("Small Text", 15, Font::plain));
-		swapDeviceButton->setBounds(xOffset + 60, 5, 25, 15);
-		swapDeviceButton->addListener(this);
-		swapDeviceButton->setAlpha(0.5f);
-		addAndMakeVisible(swapDeviceButton);
-	}
+	configureDeviceButton = new UtilityButton("...", Font("Small Text", 12, Font::plain));
+	configureDeviceButton->setBounds(xOffset + 60, 25, 24, 12);
+	configureDeviceButton->addListener(this);
+	configureDeviceButton->setAlpha(0.5f);
+	addAndMakeVisible(configureDeviceButton);
 	
 	desiredWidth = xOffset + 100;
 
@@ -553,13 +610,22 @@ void NIDAQEditor::buttonEvent(Button* button)
 		thread->toggleSourceType(((SourceTypeButton*)button)->getId());
 		((SourceTypeButton*)button)->update(thread->getSourceTypeForInput(((SourceTypeButton*)button)->getId()));
 	}
-	else if (button == swapDeviceButton)
+	else if (button == configureDeviceButton)
 	{
 		if (!thread->isThreadRunning())
 		{
-			thread->selectFromAvailableDevices();
-			//setDisplayName(thread->getProductName());
-			draw();
+
+			currentConfigWindow = new PopupConfigurationWindow(this);
+
+			CallOutBox& myBox
+				= CallOutBox::launchAsynchronously(std::unique_ptr<Component>(currentConfigWindow), 
+					button->getScreenBounds(),
+					nullptr);
+
+			myBox.setDismissalMouseClicksAreAlwaysConsumed(true);
+			
+			return;
+
 		}
 	}
 }
