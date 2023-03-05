@@ -348,9 +348,14 @@ PopupConfigurationWindow::PopupConfigurationWindow(NIDAQEditor* editor_)
     analogLabel->setBounds (2, 8, 110, 20);
     addAndMakeVisible(analogLabel);
 
+	int activeAnalogCount = editor->getNumActiveAnalogInputs();
     analogChannelCountSelect = new ComboBox ("Analog Count Selector");
-	for (int i = 0; i < editor->getTotalAvailableAnalogInputs(); i+=8)
-		analogChannelCountSelect->addItem(String(i), i / 8 + 1);
+	for (int i = 0; i <= editor->getTotalAvailableAnalogInputs(); i+=4)
+	{
+		analogChannelCountSelect->addItem(String(i), i / 4 + 1);
+		if (i == activeAnalogCount)
+			analogChannelCountSelect->setSelectedId(i / 4 + 1, dontSendNotification);
+	}
     analogChannelCountSelect->setBounds (115, 8, 60, 20);
     analogChannelCountSelect->addListener (this);
     addAndMakeVisible (analogChannelCountSelect);
@@ -360,9 +365,14 @@ PopupConfigurationWindow::PopupConfigurationWindow(NIDAQEditor* editor_)
     digitalLabel->setBounds (2, 33, 110, 20);
     addAndMakeVisible(digitalLabel);
 
+	int activeDigitalCount = editor->getNumActiveDigitalInputs();
     digitalChannelCountSelect = new ComboBox ("Digital Count Selector");
-	for (int i = 0; i < editor->getTotalAvailableDigitalInputs(); i+=8)
-		digitalChannelCountSelect->addItem(String(8*i), i / 8 + 1);
+	for (int i = 0; i <= editor->getTotalAvailableDigitalInputs(); i+=4)
+	{
+		digitalChannelCountSelect->addItem(String(i), i / 4 + 1);
+		if (i == activeDigitalCount)
+			digitalChannelCountSelect->setSelectedId(i / 4 + 1, dontSendNotification);
+	}
     digitalChannelCountSelect->setBounds (115, 33, 60, 20);
     digitalChannelCountSelect->addListener (this);
     addAndMakeVisible (digitalChannelCountSelect);
@@ -376,7 +386,7 @@ PopupConfigurationWindow::PopupConfigurationWindow(NIDAQEditor* editor_)
 	Array<int> digitalReadOptions = { 8, 32 };
 	for (int i = 0; i < 2; i++)
 		digitalReadSelect->addItem(String(digitalReadOptions[i]) + " bits", i + 1);
-	//digitalReadSelect->setSelectedId(editor->getDigitalReadSize());
+	digitalReadSelect->setSelectedId(editor->getDigitalReadSize());
 	digitalReadSelect->setBounds(115, 58, 60, 20);
 	digitalReadSelect->addListener(this);
 	addAndMakeVisible(digitalReadSelect);
@@ -387,12 +397,11 @@ PopupConfigurationWindow::PopupConfigurationWindow(NIDAQEditor* editor_)
 
 void PopupConfigurationWindow::comboBoxChanged(ComboBox* comboBox)
 {
-	int numAnalogInputs = analogChannelCountSelect->getSelectedId() * 8;
-	int numDigitalInputs = digitalChannelCountSelect->getSelectedId() * 8;
-	int digitalRead = digitalReadSelect->getSelectedId(); //0 - 8-bit, 1 - 32-bit
+	int numAnalogInputs = int(analogChannelCountSelect->getItemText(analogChannelCountSelect->getSelectedId() - 1).getFloatValue());
+	int numDigitalInputs = int(digitalChannelCountSelect->getItemText(digitalChannelCountSelect->getSelectedId() - 1).getFloatValue());
+	int digitalRead = int(digitalReadSelect->getItemText(digitalReadSelect->getSelectedId() - 1).getFloatValue());
 
-	//TODO:
-	//editor->update(numAnalogInputs, numDigitalInputs, digitalRead);
+	editor->update(numAnalogInputs, numDigitalInputs, digitalRead);
 }
 
 NIDAQEditor::NIDAQEditor(GenericProcessor* parentNode, NIDAQThread* t)
@@ -416,8 +425,8 @@ void NIDAQEditor::draw()
 	}
 	else
 	{
-		nAI = t->getNumAnalogInputs();
-		nDI = t->getNumDigitalInputs();
+		nAI = t->getNumActiveAnalogInputs();
+		nDI = t->getNumActiveDigitalInputs();
 	}
 
 	int maxChannelsPerColumn = 4;
@@ -427,12 +436,14 @@ void NIDAQEditor::draw()
 	aiButtons.clear();
 	sourceTypeButtons.clear();
 
+	int xOffset = 0;
+
 	for (int i = 0; i < nAI; i++)
 	{
 
 		int colIndex = i / aiChannelsPerColumn;
 		int rowIndex = i % aiChannelsPerColumn + 1;
-		int xOffset = colIndex * 75 + 40;
+		xOffset = colIndex * 75 + 40;
 		int y_pos = 5 + rowIndex * 26;
 
 		AIButton* a = new AIButton(i, thread);
@@ -454,7 +465,6 @@ void NIDAQEditor::draw()
 
 	diButtons.clear();
 
-	int xOffset;
 	for (int i = 0; i < nDI; i++)
 	{
 
@@ -471,7 +481,7 @@ void NIDAQEditor::draw()
 
 	}
 
-	xOffset = xOffset + 25;
+	xOffset = xOffset + 25 + 30 * (nDI == 0);
 
 	deviceSelectBox = new ComboBox("DeviceSelectBox");
 	deviceSelectBox->setBounds(xOffset, 39, 85, 20);
@@ -484,7 +494,7 @@ void NIDAQEditor::draw()
 	deviceSelectBox->addListener(this);
 	addAndMakeVisible(deviceSelectBox);
 
-	if (t->getNumAvailableDevices() == 1)
+	if (t->getNumAvailableDevices() == 1)	// disable device selection if only one device is available
 		deviceSelectBox->setEnabled(false);
 
 	sampleRateSelectBox = new ComboBox("SampleRateSelectBox");
@@ -531,6 +541,24 @@ void NIDAQEditor::draw()
 	//TODO: Why this line casuses crash in editor->update in v6?
 	//setDisplayName("NIDAQmx-(" + t->getProductName() + ")");
 
+}
+
+void NIDAQEditor::update(int numAnalog, int numDigital, int digitalReadSize)
+{
+	if (numAnalog != thread->getNumActiveAnalogInputs() || numDigital != thread->getNumActiveDigitalInputs() || digitalReadSize != thread->getDigitalReadSize())
+	{
+
+		((CallOutBox*)currentConfigWindow->getParentComponent())->dismiss();
+
+		thread->setNumActiveAnalogChannels(numAnalog);
+		thread->setNumActiveDigitalChannels(numDigital);
+		thread->setDigitalReadSize(digitalReadSize);
+
+		draw();
+
+		configureDeviceButton->triggerClick();
+
+	}
 }
 
 NIDAQEditor::~NIDAQEditor()

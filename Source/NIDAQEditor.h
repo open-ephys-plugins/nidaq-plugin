@@ -191,6 +191,8 @@ public:
 
 	void draw();
 
+	void update(int analogCount, int digitalCount, int digitalRead);
+
 	void buttonEvent(Button* button);
 	void comboBoxChanged(ComboBox*);
 
@@ -201,7 +203,11 @@ public:
 
 	int getTotalAvailableAnalogInputs() { return thread->getTotalAvailableAnalogInputs(); };
 	int getTotalAvailableDigitalInputs() { return thread-> getTotalAvailableDigitalInputs(); };
-	//int getDigitalReadSize() { return thread-> getDigitalReadSize(); };
+
+	int getNumActiveAnalogInputs() { return thread->getNumActiveAnalogInputs(); };
+	int getNumActiveDigitalInputs() { return thread->getNumActiveDigitalInputs(); };
+
+	int getDigitalReadSize() { return thread->getDigitalReadSize(); };
 
 	void saveCustomParametersToXml(XmlElement*) override;
 	void loadCustomParametersFromXml(XmlElement*) override;

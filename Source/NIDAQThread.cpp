@@ -191,7 +191,7 @@ int NIDAQThread::openConnection()
 
 	mNIDAQ = new NIDAQmx(dm->getDeviceAtIndex(0));
 
-	sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
+	sourceBuffers.add(new DataBuffer(getNumActiveAnalogInputs(), 10000));
 
 	mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
@@ -257,7 +257,7 @@ int NIDAQThread::swapConnection(String deviceName)
 			mNIDAQ = new NIDAQmx(dev);
 
 			sourceBuffers.removeLast();
-			sourceBuffers.add(new DataBuffer(getNumAnalogInputs(), 10000));
+			sourceBuffers.add(new DataBuffer(getNumActiveAnalogInputs(), 10000));
 			mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
 			deviceIndex = deviceIdx;

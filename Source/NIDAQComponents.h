@@ -30,12 +30,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nidaq-api/NIDAQmx.h"
 
+#define MAX_NUM_AI_CHANNELS 32
+#define MAX_NUM_DI_CHANNELS 32
+
+#define DEFAULT_NUM_ANALOG_INPUTS 8
+#define DEFAULT_NUM_DIGITAL_INPUTS 8
+
 #define NUM_SOURCE_TYPES 4
-#define CHANNEL_BUFFER_SIZE 500
-#define MAX_ANALOG_CHANNELS 32
 #define NUM_SAMPLE_RATES 17
-#define MAX_DIGITAL_CHANNELS 8
+#define CHANNEL_BUFFER_SIZE 500
 #define ERR_BUFF_SIZE 2048
+
 #define STR2CHR( jString ) ((jString).toUTF8())
 #define DAQmxErrChk(functionCall) if( DAQmxFailed(error=(functionCall)) ) goto Error; else
 
@@ -43,9 +48,6 @@ class NIDAQmx;
 class InputChannel;
 class AnalogInput;
 class DigitalInput;
-class Trigger;
-class Counter;
-class UserDefined;
 
 enum SOURCE_TYPE {
 	RSE = 0,
@@ -70,11 +72,18 @@ public:
 
 	String getName() { return name; }
 
+	// Defines if the channel is available for use
+	void setAvailable(bool available_) { available = available_; }
+	bool isAvailable() { return available; }
+
+	// Defines if the channel is enabled for use
 	void setEnabled(bool) { enabled = true; }
 	bool isEnabled() { return enabled; }
 
 private:
+
 	String name;
+	bool available = false;
 	bool enabled = false;
 };
 
@@ -108,9 +117,6 @@ public:
 
 	String productName;
 
-	bool isUSBDevice;
-	bool simAISamplingSupported;
-
 	NIDAQ::int32 deviceCategory;
 	NIDAQ::uInt32 productNum;
 	NIDAQ::uInt32 serialNum;
@@ -118,6 +124,11 @@ public:
 	NIDAQ::uInt32 numAOChannels;
 	NIDAQ::uInt32 numDIChannels;
 	NIDAQ::uInt32 numDOChannels;
+
+	bool isUSBDevice;
+	bool simAISamplingSupported;
+
+	int digitalReadSize;
 
 	SettingsRange sampleRateRange;
 
@@ -170,16 +181,24 @@ public:
 	String getProductName() { return device->productName; };
 	String getSerialNumber() { return String(device->serialNum); };
 
-	void getNumAnalogInputs();
+	void setNumActiveAnalogInputs(int numActiveAnalogInputs_) { numActiveAnalogInputs = numActiveAnalogInputs_; };
+	int getNumActiveAnalogInputs() { return numActiveAnalogInputs; };
+
+	void setNumActiveDigitalInputs(int numActiveDigitalInputs_) { numActiveDigitalInputs = numActiveDigitalInputs_; };
+	int getNumActiveDigitalInputs() { return numActiveDigitalInputs; };
+
 	int getActiveDigitalLines();
 
+	void setDigitalReadSize(int digitalReadSize_) { digitalReadSize = digitalReadSize_; };
+	int getDigitalReadSize() { return digitalReadSize; };
+
 	NIDAQ::float64 getSampleRate() { return sampleRates[sampleRateIndex]; };
+	void setSampleRate(int index) { sampleRateIndex = index; };
+
 	SettingsRange getVoltageRange() { return device->voltageRanges[voltageRangeIndex]; };
+	void setVoltageRange(int index) { voltageRangeIndex = index; };
 
 	SOURCE_TYPE getSourceTypeForInput(int analogIntputIndex);
-
-	void setSampleRate(int index) { sampleRateIndex = index; };
-	void setVoltageRange(int index) { voltageRangeIndex = index; };
 	void toggleSourceType(int analogInputIndex);
 
 	void run();
@@ -200,8 +219,15 @@ private:
 	int sampleRateIndex = 0;
 	int voltageRangeIndex = 0;
 
-	NIDAQ::float64		ai_data[CHANNEL_BUFFER_SIZE * MAX_ANALOG_CHANNELS];
+	int digitalReadSize = 0;
+
+	int numActiveAnalogInputs = DEFAULT_NUM_ANALOG_INPUTS;
+	int numActiveDigitalInputs = DEFAULT_NUM_DIGITAL_INPUTS;
+
+	NIDAQ::float64		ai_data[CHANNEL_BUFFER_SIZE * DEFAULT_NUM_ANALOG_INPUTS];
+
 	NIDAQ::uInt8		di_data_8[CHANNEL_BUFFER_SIZE];  //PXI devices use 8-bit read
+	NIDAQ::uInt16		di_data_16[CHANNEL_BUFFER_SIZE]; //some other devices may use 16-bit read? 
 	NIDAQ::uInt32		di_data_32[CHANNEL_BUFFER_SIZE]; //USB devices use 32-bit read
 
 	int64 ai_timestamp;

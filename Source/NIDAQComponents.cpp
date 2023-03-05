@@ -120,6 +120,8 @@ NIDAQmx::NIDAQmx(NIDAQDevice* device_)
 
 	connect();
 
+	digitalReadSize = device->digitalReadSize;
+
 	// Pre-define reasonable sample rates
 	float sample_rates[NUM_SAMPLE_RATES] = {
 		1000.0f, 1250.0f, 1500.0f,
@@ -174,6 +176,8 @@ void NIDAQmx::connect()
 
 		device->isUSBDevice = device->productName.contains("USB");
 
+		device->digitalReadSize = device->isUSBDevice ? 32 : 8;
+
 		NIDAQ::DAQmxGetDevProductNum(STR2CHR(deviceName), &device->productNum);
 		LOGD("Product Num: ", device->productNum);
 
@@ -225,7 +229,7 @@ void NIDAQmx::connect()
 		StringArray channel_list;
 		channel_list.addTokens(&ai_channel_data[0], ", ", "\"");
 
-		int aiCount = 0;
+		device->numAIChannels = 0;
 		ai.clear();
 
 		LOGD("Detected ", channel_list.size(), " analog input channels");
@@ -233,7 +237,7 @@ void NIDAQmx::connect()
 		for (int i = 0; i < channel_list.size(); i++)
 		{
 
-			if (channel_list[i].length() > 0 && aiCount < MAX_ANALOG_CHANNELS)
+			if (channel_list[i].length() > 0)
 			{
 				/* Get channel termination */
 				NIDAQ::int32 termCfgs;
@@ -245,11 +249,13 @@ void NIDAQmx::connect()
 
 				ai.add(new AnalogInput(name, termCfgs));
 
-				ai.getLast()->setEnabled(true);
+				if (device->numAIChannels++ <= numActiveAnalogInputs)
+				{
+					ai.getLast()->setAvailable(true);
+					ai.getLast()->setEnabled(true);
+				}
 
 				LOGD("Adding analog input channel: ", name, " with terminal config: ", " (", termCfgs, ") enabled: ", ai.getLast()->isEnabled() ? "YES" : "NO");
-
-				aiCount++;
 				
 			}
 		}
@@ -296,22 +302,26 @@ void NIDAQmx::connect()
 		LOGD("Found digital inputs: ");
 
 		channel_list.clear();
-
 		channel_list.addTokens(&di_channel_data[0], ", ", "\"");
 
-		int diCount = 0;
+		device->numDIChannels = 0;
 		di.clear();
 
 		for (int i = 0; i < channel_list.size(); i++)
 		{
 			StringArray channel_type;
 			channel_type.addTokens(channel_list[i], "/", "\"");
-			if (channel_list[i].length() > 0 && diCount++ < MAX_DIGITAL_CHANNELS)
+			if (channel_list[i].length() > 0 && device->numDIChannels < numActiveDigitalInputs)
 			{
 				String name = channel_list[i].toRawUTF8();
 				LOGD("Found digital input: ", name);
 				di.add(new InputChannel(name));
-				di.getLast()->setEnabled(true);
+
+				if (device->numDIChannels++ < numActiveDigitalInputs)
+				{
+					di.getLast()->setAvailable(true);
+					di.getLast()->setEnabled(true);
+				}
 			}
 		}
 
@@ -424,7 +434,7 @@ void NIDAQmx::run()
 		getSampleRate(),									//rate : samples per second per channel
 		DAQmx_Val_Rising,									//activeEdge : (DAQmc_Val_Rising || DAQmx_Val_Falling)
 		DAQmx_Val_ContSamps,								//sampleMode : (DAQmx_Val_FiniteSamps || DAQmx_Val_ContSamps || DAQmx_Val_HWTimedSinglePoint)
-		MAX_ANALOG_CHANNELS * CHANNEL_BUFFER_SIZE));		//sampsPerChanToAcquire : 
+		numActiveAnalogInputs * CHANNEL_BUFFER_SIZE));		//sampsPerChanToAcquire : 
 																//If sampleMode == DAQmx_Val_FiniteSamps : # of samples to acquire for each channel
 																//Elif sampleMode == DAQmx_Val_ContSamps : circular buffer size
 
@@ -445,7 +455,7 @@ void NIDAQmx::run()
 	NIDAQ::DAQmxGetDevDIPorts(STR2CHR(device->getName()), &ports[0], sizeof(ports));
 
 	/* For now, restrict max num digital inputs until software buffering is implemented */
-	if (MAX_DIGITAL_CHANNELS <= 8)
+	if (numActiveDigitalInputs)
 	{
 		StringArray port_list;
 		port_list.addTokens(&ports[0], ", ", "\"");
@@ -484,11 +494,9 @@ void NIDAQmx::run()
 	DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleDI));
 	DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleAI));
 
-	NIDAQ::int32 numSampsPerChan;
+	NIDAQ::int32 numSampsPerChan = CHANNEL_BUFFER_SIZE;
 	if (device->isUSBDevice)
 		numSampsPerChan = 100;
-	else
-		numSampsPerChan = CHANNEL_BUFFER_SIZE;
 
 	NIDAQ::int32 arraySizeInSamps = ai.size() * numSampsPerChan;
 	NIDAQ::float64 timeout = 5.0;
@@ -516,7 +524,7 @@ void NIDAQmx::run()
 
 		if (getActiveDigitalLines() > 0)
 		{
-			if (device->isUSBDevice)
+			if (digitalReadSize == 32)
 				DAQmxErrChk(NIDAQ::DAQmxReadDigitalU32(
 					taskHandleDI,
 					numSampsPerChan,
@@ -526,7 +534,17 @@ void NIDAQmx::run()
 					numSampsPerChan,
 					&di_read,
 					NULL));
-			else 
+			else if (digitalReadSize == 16)
+				DAQmxErrChk(NIDAQ::DAQmxReadDigitalU16(
+					taskHandleDI,
+					numSampsPerChan,
+					timeout,
+					DAQmx_Val_GroupByScanNumber,
+					di_data_16,
+					numSampsPerChan,
+					&di_read,
+					NULL));
+			else if (digitalReadSize == 8)
 				DAQmxErrChk(NIDAQ::DAQmxReadDigitalU8(
 					taskHandleDI,
 					numSampsPerChan,
@@ -551,24 +569,26 @@ void NIDAQmx::run()
 		}
 		*/
 
-		float aiSamples[MAX_ANALOG_CHANNELS];
+		float aiSamples[MAX_NUM_AI_CHANNELS];
 		int count = 0;
 		for (int i = 0; i < arraySizeInSamps; i++)
 		{
 	
-			int channel = i % MAX_ANALOG_CHANNELS;
+			int channel = i % numActiveAnalogInputs;
 
 			aiSamples[channel] = 0;
 			if (ai[channel]->isEnabled())
 				aiSamples[channel] = ai_data[i];
 
-			if (i % MAX_ANALOG_CHANNELS == 0)
+			if (i % numActiveAnalogInputs == 0)
 			{
 				ai_timestamp++;
 				if (getActiveDigitalLines() > 0)
 				{
-					if (device->isUSBDevice)
+					if (digitalReadSize == 32)
 						eventCode = di_data_32[count++] & getActiveDigitalLines();
+					else if (digitalReadSize == 16)
+						eventCode = di_data_16[count++] & getActiveDigitalLines();
 					else
 						eventCode = di_data_8[count++] & getActiveDigitalLines();
 				}
