@@ -672,8 +672,11 @@ void NIDAQEditor::buttonEvent(Button* button)
 	}
 	else if (sourceTypeButtons.contains((SourceTypeButton*)button))
 	{
-		thread->toggleSourceType(((SourceTypeButton*)button)->getId());
-		((SourceTypeButton*)button)->update(thread->getSourceTypeForInput(((SourceTypeButton*)button)->getId()));
+		int currentButtonId = ((SourceTypeButton*)button)->getId();
+		thread->toggleSourceType(currentButtonId);
+		SOURCE_TYPE next = thread->getSourceTypeForInput(currentButtonId);
+		((SourceTypeButton*)button)->update(next);
+		repaint();
 	}
 	else if (button == configureDeviceButton)
 	{

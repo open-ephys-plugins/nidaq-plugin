@@ -96,7 +96,7 @@ public:
 	~AnalogInput() {};
 
 	SOURCE_TYPE getSourceType() { return sourceTypes[sourceTypeIndex]; }
-	void setSourceType(int index) { sourceTypeIndex = index; }
+	void setNextSourceType() { sourceTypeIndex = (sourceTypeIndex + 1) % sourceTypes.size(); }
 
 private:
 	int sourceTypeIndex = 0;
@@ -198,8 +198,8 @@ public:
 	SettingsRange getVoltageRange() { return device->voltageRanges[voltageRangeIndex]; };
 	void setVoltageRange(int index) { voltageRangeIndex = index; };
 
-	SOURCE_TYPE getSourceTypeForInput(int analogIntputIndex);
-	void toggleSourceType(int analogInputIndex);
+	SOURCE_TYPE getSourceTypeForInput(int analogIntputIndex) { return ai[analogIntputIndex]->getSourceType(); };
+	void toggleSourceType(int analogInputIndex) { ai[analogInputIndex]->setNextSourceType(); }
 
 	void run();
 

@@ -365,12 +365,6 @@ int NIDAQmx::getActiveDigitalLines()
 	return linesEnabled;
 }
 
-void NIDAQmx::toggleSourceType(int index)
-{
-	SOURCE_TYPE current = ai[index]->getSourceType();
-	ai[index]->setSourceType((static_cast<int>(current)+1) % NUM_SOURCE_TYPES);
-}
-
 void NIDAQmx::run()
 {
 	/* Derived from NIDAQmx: ANSI C Example program: ContAI-ReadDigChan.c */
