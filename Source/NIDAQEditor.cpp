@@ -737,7 +737,7 @@ void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 		{
 			if (sr == sampleRate)
 			{
-				LOGC("Setting saved sample rate: " + String(sampleRate) + " (" + String(idx) + ")");
+				LOGD("Setting saved sample rate: " + String(sampleRate) + " (" + String(idx) + ")");
 				thread->setSampleRate(idx);
 				sampleRateSelectBox->setSelectedItemIndex(thread->getSampleRateIndex(), false);
 				break;

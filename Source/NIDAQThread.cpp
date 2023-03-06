@@ -84,8 +84,6 @@ void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChanne
 	OwnedArray<ConfigurationObject>* configurationObjects)
 {
 
-	LOGC("NIDAQThread::Updating settings...");
-
 	if (sourceStreams.size() == 0) // initialize data streams
 	{
 
