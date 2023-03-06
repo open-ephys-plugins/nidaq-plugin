@@ -193,12 +193,15 @@ void NIDAQmx::connect()
 		/* Get device sample rates */
 		NIDAQ::float64 smin;
 		NIDAQ::DAQmxGetDevAIMinRate(STR2CHR(deviceName), &smin);
+		LOGD("Min sample rate: ", smin);
 
 		NIDAQ::float64 smaxs;
 		NIDAQ::DAQmxGetDevAIMaxSingleChanRate(STR2CHR(deviceName), &smaxs);
+		LOGD("Max single channel sample rate: ", smaxs);
 
 		NIDAQ::float64 smaxm;
 		NIDAQ::DAQmxGetDevAIMaxMultiChanRate(STR2CHR(deviceName), &smaxm);
+		LOGD("Max multi channel sample rate: ", smaxm);
 
 		NIDAQ::float64 data[512];
 		NIDAQ::DAQmxGetDevAIVoltageRngs(STR2CHR(deviceName), &data[0], sizeof(data));
@@ -212,13 +215,8 @@ void NIDAQmx::connect()
 			NIDAQ::float64 vmax = data[i + 1];
 			if (vmin == vmax || abs(vmin) < 1e-10 || vmax < 1e-2)
 				break;
-			LOGC("Vmin: ", vmin, " Vmax: ", vmax);
 			device->voltageRanges.add(SettingsRange(vmin, vmax));
 		}
-
-		//LOGC("Min sample rate: ", sampleRateRange.smin);
-		//LOGC("Max single channel sample rate: ", sampleRateRange.smaxs);
-		//LOGC("Max multi channel sample rate: ", sampleRateRange.smaxm);
 
 		NIDAQ::int32	error = 0;
 		char			errBuff[ERR_BUFF_SIZE] = { '\0' };

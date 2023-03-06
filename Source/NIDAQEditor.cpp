@@ -383,10 +383,13 @@ PopupConfigurationWindow::PopupConfigurationWindow(NIDAQEditor* editor_)
 	addAndMakeVisible(digitalReadLabel);
 
 	digitalReadSelect = new ComboBox("Digital Read Selector");
-	Array<int> digitalReadOptions = { 8, 32 };
-	for (int i = 0; i < 2; i++)
+	Array<int> digitalReadOptions = { 8, 16, 32 };
+	for (int i = 0; i < digitalReadOptions.size(); i++)
+	{
 		digitalReadSelect->addItem(String(digitalReadOptions[i]) + " bits", i + 1);
-	digitalReadSelect->setSelectedId(editor->getDigitalReadSize());
+		if (digitalReadOptions[i] == editor->getDigitalReadSize())
+			digitalReadSelect->setSelectedId(i + 1, dontSendNotification);
+	}
 	digitalReadSelect->setBounds(115, 58, 60, 20);
 	digitalReadSelect->addListener(this);
 	addAndMakeVisible(digitalReadSelect);
@@ -545,19 +548,23 @@ void NIDAQEditor::draw()
 
 void NIDAQEditor::update(int numAnalog, int numDigital, int digitalReadSize)
 {
-	if (numAnalog != thread->getNumActiveAnalogInputs() || numDigital != thread->getNumActiveDigitalInputs() || digitalReadSize != thread->getDigitalReadSize())
+	if (numAnalog != thread->getNumActiveAnalogInputs() || numDigital != thread->getNumActiveDigitalInputs())
 	{
 
 		((CallOutBox*)currentConfigWindow->getParentComponent())->dismiss();
 
 		thread->setNumActiveAnalogChannels(numAnalog);
 		thread->setNumActiveDigitalChannels(numDigital);
-		thread->setDigitalReadSize(digitalReadSize);
 
 		draw();
 
 		configureDeviceButton->triggerClick();
 
+	}
+
+	if (digitalReadSize != thread->getDigitalReadSize())
+	{
+		thread->setDigitalReadSize(digitalReadSize);
 	}
 }
 
@@ -565,6 +572,37 @@ NIDAQEditor::~NIDAQEditor()
 {
 
 }
+
+void NIDAQEditor::startAcquisition()
+{
+	//Disable all source type buttons
+	for (auto& button : sourceTypeButtons)
+		button->setEnabled(false);
+
+	//Disable all combo boxes
+	deviceSelectBox->setEnabled(false);
+	sampleRateSelectBox->setEnabled(false);
+	voltageRangeSelectBox->setEnabled(false);
+
+	//Disable device config button
+	configureDeviceButton->setEnabled(false);
+}
+
+void NIDAQEditor::stopAcquisition()
+{
+	//Enable all source type buttons
+	for (auto& button : sourceTypeButtons)
+		button->setEnabled(true);
+
+	//Enable all combo boxes
+	deviceSelectBox->setEnabled(true);
+	sampleRateSelectBox->setEnabled(true);
+	voltageRangeSelectBox->setEnabled(true);
+
+	//Enable device config button
+	configureDeviceButton->setEnabled(true);
+}
+
 
 /** Respond to button presses */
 void NIDAQEditor::buttonClicked(Button* button)

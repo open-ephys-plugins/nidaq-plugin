@@ -199,8 +199,6 @@ public:
 	/** Respond to button presses */
 	void buttonClicked(Button* button) override;
 
-	void updateSettings(int analogCount, int digitalCount, int digitalRead);
-
 	int getTotalAvailableAnalogInputs() { return thread->getTotalAvailableAnalogInputs(); };
 	int getTotalAvailableDigitalInputs() { return thread-> getTotalAvailableDigitalInputs(); };
 
@@ -208,6 +206,9 @@ public:
 	int getNumActiveDigitalInputs() { return thread->getNumActiveDigitalInputs(); };
 
 	int getDigitalReadSize() { return thread->getDigitalReadSize(); };
+
+	void startAcquisition() override;
+	void stopAcquisition() override;
 
 	void saveCustomParametersToXml(XmlElement*) override;
 	void loadCustomParametersFromXml(XmlElement*) override;

@@ -214,7 +214,6 @@ void NIDAQThread::selectFromAvailableDevices()
 	for (int i = 0; i < getNumAvailableDevices(); i++)
 	{
 		String productName = dm->getDeviceAtIndex(i)->productName;
-		LOGC("Comparing ", productName, " to ", getProductName(), " (", productName == getProductName(), ")");
 		if (!(productName == getProductName()))
 		{
 			productNames.add(productName);
@@ -223,7 +222,6 @@ void NIDAQThread::selectFromAvailableDevices()
 	}
 	int selectedDeviceIndex = deviceSelect.show();
 
-	LOGC("User selected device at index: ", selectedDeviceIndex);
 	if (selectedDeviceIndex == 0) //user clicked outside of popup window
 		return;
 
@@ -242,8 +240,6 @@ void NIDAQThread::selectFromAvailableDevices()
 
 int NIDAQThread::swapConnection(String deviceName)
 {
-
-	LOGC("Swapping connection to ", deviceName);
 
 	int deviceIdx = -1;
 
