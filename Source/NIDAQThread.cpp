@@ -291,14 +291,16 @@ void NIDAQThread::closeConnection()
 {
 }
 
-void NIDAQThread::toggleAIChannel(int index)
+bool NIDAQThread::toggleAIChannel(int index)
 {
 	mNIDAQ->ai[index]->setEnabled(!mNIDAQ->ai[index]->isEnabled());
+	return mNIDAQ->ai[index]->isEnabled();
 }
 
-void NIDAQThread::toggleDIChannel(int index)
+bool NIDAQThread::toggleDIChannel(int index)
 {
 	mNIDAQ->di[index]->setEnabled(!mNIDAQ->di[index]->isEnabled());
+	return mNIDAQ->di[index]->isEnabled();
 }
 
 void NIDAQThread::setDeviceIndex(int index)

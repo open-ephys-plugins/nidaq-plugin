@@ -77,7 +77,7 @@ public:
 	bool isAvailable() { return available; }
 
 	// Defines if the channel is enabled for use
-	void setEnabled(bool) { enabled = true; }
+	void setEnabled(bool enabled_) { enabled = enabled_; }
 	bool isEnabled() { return enabled; }
 
 private:
@@ -221,8 +221,8 @@ private:
 
 	int digitalReadSize = 0;
 
-	int numActiveAnalogInputs = DEFAULT_NUM_ANALOG_INPUTS;
-	int numActiveDigitalInputs = DEFAULT_NUM_DIGITAL_INPUTS;
+	int numActiveAnalogInputs = DEFAULT_NUM_ANALOG_INPUTS; //8
+	int numActiveDigitalInputs = DEFAULT_NUM_DIGITAL_INPUTS; //8
 
 	NIDAQ::float64		ai_data[CHANNEL_BUFFER_SIZE * DEFAULT_NUM_ANALOG_INPUTS];
 

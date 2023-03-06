@@ -154,7 +154,6 @@ void FifoMonitor::timerCallback()
 	//TODO:
 }
 
-
 void FifoMonitor::setFillPercentage(float fill_)
 {
 	fillPercentage = fill_;
@@ -243,7 +242,7 @@ int DIButton::getId()
 void DIButton::setEnabled(bool enable)
 {
 	enabled = enable;
-	thread->mNIDAQ->ai[id]->setEnabled(enabled);
+	thread->mNIDAQ->di[id]->setEnabled(enabled);
 }
 
 void DIButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
@@ -271,7 +270,6 @@ void DIButton::paintButton(Graphics& g, bool isMouseOver, bool isButtonDown)
 	}
 	g.fillRoundedRectangle(3, 3, 9, 9, 2);
 }
-
 
 void DIButton::timerCallback()
 {
@@ -350,11 +348,11 @@ PopupConfigurationWindow::PopupConfigurationWindow(NIDAQEditor* editor_)
 
 	int activeAnalogCount = editor->getNumActiveAnalogInputs();
     analogChannelCountSelect = new ComboBox ("Analog Count Selector");
-	for (int i = 0; i <= editor->getTotalAvailableAnalogInputs(); i+=4)
+	for (int i = 4; i <= editor->getTotalAvailableAnalogInputs(); i+=4)
 	{
-		analogChannelCountSelect->addItem(String(i), i / 4 + 1);
+		analogChannelCountSelect->addItem(String(i), i / 4);
 		if (i == activeAnalogCount)
-			analogChannelCountSelect->setSelectedId(i / 4 + 1, dontSendNotification);
+			analogChannelCountSelect->setSelectedId(i / 4, dontSendNotification);
 	}
     analogChannelCountSelect->setBounds (115, 8, 60, 20);
     analogChannelCountSelect->addListener (this);
@@ -441,6 +439,7 @@ void NIDAQEditor::draw()
 
 	int xOffset = 0;
 
+	// Draw analog inputs 
 	for (int i = 0; i < nAI; i++)
 	{
 
@@ -468,6 +467,7 @@ void NIDAQEditor::draw()
 
 	diButtons.clear();
 
+	// Draw digital inputs
 	for (int i = 0; i < nDI; i++)
 	{
 
@@ -603,7 +603,6 @@ void NIDAQEditor::stopAcquisition()
 	configureDeviceButton->setEnabled(true);
 }
 
-
 /** Respond to button presses */
 void NIDAQEditor::buttonClicked(Button* button)
 {
@@ -661,14 +660,12 @@ void NIDAQEditor::buttonEvent(Button* button)
 
 	if (aiButtons.contains((AIButton*)button))
 	{
-		((AIButton*)button)->setEnabled(!((AIButton*)button)->enabled);
-		thread->toggleAIChannel(((AIButton*)button)->getId());
+		((AIButton*)button)->setEnabled(thread->toggleAIChannel(((AIButton*)button)->getId()));
 		repaint();
 	}
 	else if (diButtons.contains((DIButton*)button))
 	{
-		((DIButton*)button)->setEnabled(!((DIButton*)button)->enabled);
-		thread->toggleDIChannel(((DIButton*)button)->getId());
+		((DIButton*)button)->setEnabled(thread->toggleDIChannel(((DIButton*)button)->getId()));
 		repaint();
 	}
 	else if (sourceTypeButtons.contains((SourceTypeButton*)button))
@@ -696,14 +693,12 @@ void NIDAQEditor::buttonEvent(Button* button)
 	}
 }
 
-
 void NIDAQEditor::saveCustomParametersToXml(XmlElement* xml)
 {
 	xml->setAttribute("deviceName", thread->getDeviceName());
 	xml->setAttribute("sampleRate", thread->getSampleRate());
 	xml->setAttribute("voltageRange", thread->getVoltageRangeIndex());
 }
-
 
 void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 {

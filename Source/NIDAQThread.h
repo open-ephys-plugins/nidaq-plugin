@@ -126,8 +126,8 @@ public:
 	Array<NIDAQ::float64> getSampleRates();
 	int getSampleRateIndex() { return sampleRateIndex; };
 
-	void toggleAIChannel(int channelIndex);
-	void toggleDIChannel(int channelIndex);
+	bool toggleAIChannel(int channelIndex);
+	bool toggleDIChannel(int channelIndex);
 
 	SOURCE_TYPE getSourceTypeForInput(int index);
 	void toggleSourceType(int id);

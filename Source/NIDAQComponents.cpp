@@ -353,6 +353,9 @@ Error:
 
 int NIDAQmx::getActiveDigitalLines()
 {
+	if (!getNumActiveDigitalInputs())
+		return 0;
+
 	uint16 linesEnabled = 0;
 	for (int i = 0; i < di.size(); i++)
 	{
@@ -449,33 +452,35 @@ void NIDAQmx::run()
 	static int			totalDIRead = 0;
 	NIDAQ::TaskHandle	taskHandleDI = 0;
 
-	char ports[2048];
-	NIDAQ::DAQmxGetDevDIPorts(STR2CHR(device->getName()), &ports[0], sizeof(ports));
-
 	/* For now, restrict max num digital inputs until software buffering is implemented */
 	if (numActiveDigitalInputs)
 	{
+
+		char ports[2048];
+		NIDAQ::DAQmxGetDevDIPorts(STR2CHR(device->getName()), &ports[0], sizeof(ports));
+
 		StringArray port_list;
 		port_list.addTokens(&ports[0], ", ", "\"");
 		usePort = port_list[0];
+
+		/* Create a digital input task using device serial number to gurantee unique task name per device */
+		if (device->isUSBDevice)
+			DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_USB"+getSerialNumber()), &taskHandleDI));
+		else
+			DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_PXI"+getSerialNumber()), &taskHandleDI));
+
+		/* Create a channel for each digital input */
+		DAQmxErrChk(NIDAQ::DAQmxCreateDIChan(
+			taskHandleDI,
+			STR2CHR(usePort),
+			"",
+			DAQmx_Val_ChanForAllLines));
+
 	}
-
-	/* Create a digital input task using device serial number to gurantee unique task name per device */
-	if (device->isUSBDevice)
-		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_USB"+getSerialNumber()), &taskHandleDI));
-	else
-		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_PXI"+getSerialNumber()), &taskHandleDI));
-
-	/* Create a channel for each digital input */
-	DAQmxErrChk(NIDAQ::DAQmxCreateDIChan(
-		taskHandleDI,
-		STR2CHR(usePort),
-		"",
-		DAQmx_Val_ChanForAllLines));
 
 	LOGD("Is USB Device: ", device->isUSBDevice);
 	
-	if (!device->isUSBDevice) //USB devices do not have an internal clock and instead use CPU, so we can't configure the sample clock timing
+	if (numActiveAnalogInputs && numActiveDigitalInputs && !device->isUSBDevice) //USB devices do not have an internal clock and instead use CPU, so we can't configure the sample clock timing
 		DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
 			taskHandleDI,							//task handle
 			trigName,								//source : NULL means use internal clock, we will sync to analog input clock
@@ -486,11 +491,12 @@ void NIDAQmx::run()
 														//If sampleMode == DAQmx_Val_FiniteSamps : # of samples to acquire for each channel
 														//Elif sampleMode == DAQmx_Val_ContSamps : circular buffer size
 
-	DAQmxErrChk(NIDAQ::DAQmxTaskControl(taskHandleAI, DAQmx_Val_Task_Commit));
-	DAQmxErrChk(NIDAQ::DAQmxTaskControl(taskHandleDI, DAQmx_Val_Task_Commit));
+	// This order is necessary to get the timing right
+	if (numActiveAnalogInputs) DAQmxErrChk(NIDAQ::DAQmxTaskControl(taskHandleAI, DAQmx_Val_Task_Commit));
+	if (numActiveDigitalInputs) DAQmxErrChk(NIDAQ::DAQmxTaskControl(taskHandleDI, DAQmx_Val_Task_Commit));
 
-	DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleDI));
-	DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleAI));
+	if (numActiveDigitalInputs) DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleDI));
+	if (numActiveAnalogInputs) DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleAI));
 
 	NIDAQ::int32 numSampsPerChan = CHANNEL_BUFFER_SIZE;
 	if (device->isUSBDevice)
@@ -507,16 +513,16 @@ void NIDAQmx::run()
 
 	while (!threadShouldExit())
 	{
-
-		DAQmxErrChk(NIDAQ::DAQmxReadAnalogF64(
-			taskHandleAI,
-			numSampsPerChan,
-			timeout,
-			DAQmx_Val_GroupByScanNumber, //DAQmx_Val_GroupByScanNumber
-			ai_data,
-			arraySizeInSamps,
-			&ai_read,
-			NULL));
+		if (numActiveAnalogInputs)
+			DAQmxErrChk(NIDAQ::DAQmxReadAnalogF64(
+				taskHandleAI,
+				numSampsPerChan,
+				timeout,
+				DAQmx_Val_GroupByScanNumber, //DAQmx_Val_GroupByScanNumber
+				ai_data,
+				arraySizeInSamps,
+				&ai_read,
+				NULL));
 
 		LOGD("arraySizeInSamps: ", arraySizeInSamps, "Samples read: ", ai_read);
 
