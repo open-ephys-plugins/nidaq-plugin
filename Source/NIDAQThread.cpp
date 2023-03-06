@@ -84,6 +84,8 @@ void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChanne
 	OwnedArray<ConfigurationObject>* configurationObjects)
 {
 
+	LOGC("NIDAQThread::Updating settings...");
+
 	if (sourceStreams.size() == 0) // initialize data streams
 	{
 
@@ -134,7 +136,7 @@ void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChanne
 
 		currentStream->clearChannels();
 
-		for (int ch = 0; ch < mNIDAQ->ai.size(); ch++)
+		for (int ch = 0; ch < getNumActiveAnalogInputs(); ch++)
 		{
 
 			if (mNIDAQ->ai[ch]->isEnabled())

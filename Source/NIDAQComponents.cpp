@@ -326,7 +326,7 @@ void NIDAQmx::connect()
 		// Set sample rate range
 		NIDAQ::float64 smax = smaxm;
 		if (!device->simAISamplingSupported)
-			smax /= ai.size();
+			smax /= numActiveAnalogInputs;
 
 		device->sampleRateRange = SettingsRange(smin, smax);
 
@@ -388,7 +388,7 @@ void NIDAQmx::run()
 
 	aiBuffer->clear();
 
-	String usePort; //Temporary digital port restriction until software buffering is implemented
+	String usePort;
 
 	/* Create an analog input task */
 	if (device->isUSBDevice)
@@ -397,7 +397,7 @@ void NIDAQmx::run()
 		DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("AITask_PXI" + getSerialNumber()), &taskHandleAI));
 
 	/* Create a voltage channel for each analog input */
-	for (int i = 0; i < ai.size(); i++)
+	for (int i = 0; i < numActiveAnalogInputs; i++)
 	{
 		NIDAQ::int32 termConfig;
 
@@ -502,7 +502,7 @@ void NIDAQmx::run()
 	if (device->isUSBDevice)
 		numSampsPerChan = 100;
 
-	NIDAQ::int32 arraySizeInSamps = ai.size() * numSampsPerChan;
+	NIDAQ::int32 arraySizeInSamps = numActiveAnalogInputs * numSampsPerChan;
 	NIDAQ::float64 timeout = 5.0;
 
 	uint64 linesEnabled = 0;

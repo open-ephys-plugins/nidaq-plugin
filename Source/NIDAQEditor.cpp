@@ -551,20 +551,22 @@ void NIDAQEditor::update(int numAnalog, int numDigital, int digitalReadSize)
 	if (numAnalog != thread->getNumActiveAnalogInputs() || numDigital != thread->getNumActiveDigitalInputs())
 	{
 
-		((CallOutBox*)currentConfigWindow->getParentComponent())->dismiss();
-
 		thread->setNumActiveAnalogChannels(numAnalog);
 		thread->setNumActiveDigitalChannels(numDigital);
 
 		draw();
 
-		configureDeviceButton->triggerClick();
+		((CallOutBox*)currentConfigWindow->getParentComponent())->dismiss();
+
+		CoreServices::updateSignalChain(this);
 
 	}
 
 	if (digitalReadSize != thread->getDigitalReadSize())
 	{
 		thread->setDigitalReadSize(digitalReadSize);
+
+		((CallOutBox*)currentConfigWindow->getParentComponent())->dismiss();
 	}
 }
 
