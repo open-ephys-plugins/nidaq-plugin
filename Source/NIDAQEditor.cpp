@@ -700,6 +700,11 @@ void NIDAQEditor::saveCustomParametersToXml(XmlElement* xml)
 	xml->setAttribute("deviceName", thread->getDeviceName());
 	xml->setAttribute("sampleRate", thread->getSampleRate());
 	xml->setAttribute("voltageRange", thread->getVoltageRangeIndex());
+
+	xml->setAttribute("numAnalog", thread->getNumActiveAnalogInputs());
+	xml->setAttribute("numDigital", thread->getNumActiveDigitalInputs());
+	xml->setAttribute("digitalReadSize", thread->getDigitalReadSize());
+
 }
 
 void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
@@ -746,5 +751,31 @@ void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 		thread->setVoltageRange(voltageRangeIndex);
 		voltageRangeSelectBox->setSelectedItemIndex(thread->getVoltageRangeIndex(), false);
 	}
+
+	// Load number of active analog channels
+	int numAnalog = xml->getStringAttribute("numAnalog", "0").getIntValue();
+
+	if (numAnalog >= 0)
+	{
+		thread->setNumActiveAnalogChannels(numAnalog);
+	}
+
+	// Load number of active digital channels
+	int numDigital = xml->getStringAttribute("numDigital", "0").getIntValue();
+
+	if (numDigital >= 0)
+	{
+		thread->setNumActiveDigitalChannels(numDigital);
+	}
+
+	// Load digital read size
+	int digitalReadSize = xml->getStringAttribute("digitalReadSize", "0").getIntValue();
+
+	if (digitalReadSize >= 0)
+	{
+		thread->setDigitalReadSize(digitalReadSize);
+	}
+
+	draw();
 
 }
