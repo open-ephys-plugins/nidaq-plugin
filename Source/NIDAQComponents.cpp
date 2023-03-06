@@ -609,10 +609,10 @@ void NIDAQmx::run()
 	// DAQmx Stop Code
 	/*********************************************/
 
-	NIDAQ::DAQmxStopTask(taskHandleAI);
-	NIDAQ::DAQmxClearTask(taskHandleAI);
-	NIDAQ::DAQmxStopTask(taskHandleDI);
-	NIDAQ::DAQmxClearTask(taskHandleDI);
+	if (numActiveAnalogInputs) NIDAQ::DAQmxStopTask(taskHandleAI);
+	if (numActiveAnalogInputs) NIDAQ::DAQmxClearTask(taskHandleAI);
+	if (numActiveDigitalInputs) NIDAQ::DAQmxStopTask(taskHandleDI);
+	if (numActiveDigitalInputs) NIDAQ::DAQmxClearTask(taskHandleDI);
 
 	return;
 
