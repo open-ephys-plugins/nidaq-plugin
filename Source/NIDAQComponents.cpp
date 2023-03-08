@@ -520,7 +520,7 @@ void NIDAQmx::run()
 				&ai_read,
 				NULL));
 
-		LOGD("arraySizeInSamps: ", arraySizeInSamps, "Samples read: ", ai_read);
+		//LOGD("arraySizeInSamps: ", arraySizeInSamps, " Samples read: ", ai_read);
 
 		if (getActiveDigitalLines() > 0)
 		{
