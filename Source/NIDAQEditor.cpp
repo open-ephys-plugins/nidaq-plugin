@@ -458,7 +458,7 @@ void NIDAQEditor::draw()
 		LOGD("Got source type for input ", i, ": ", sourceType);
 
 		SourceTypeButton* b = new SourceTypeButton(i, thread, sourceType);
-		b->setBounds(xOffset+18, y_pos-2, 26, 17);
+		b->setBounds(xOffset+17, y_pos-2, 27, 17);
 		b->addListener(this);
 		addAndMakeVisible(b);
 		sourceTypeButtons.add(b);
