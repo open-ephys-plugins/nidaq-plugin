@@ -259,9 +259,9 @@ void NIDAQmx::connect()
 		}
 
 		// TODO: Get ADC resolution for each voltage range (throwing error as is)
+		/*
 		NIDAQ::TaskHandle adcResolutionQuery;
 
-		/*
 		NIDAQ::DAQmxCreateTask("ADCResolutionQuery", &adcResolutionQuery);
 
 		SettingsRange vRange;
@@ -335,11 +335,13 @@ Error:
 		if (DAQmxFailed(error))
 			NIDAQ::DAQmxGetExtendedErrorInfo(errBuff, ERR_BUFF_SIZE);
 
+		/*
 		if (adcResolutionQuery != 0) {
 			// DAQmx Stop Code
 			NIDAQ::DAQmxStopTask(adcResolutionQuery);
 			NIDAQ::DAQmxClearTask(adcResolutionQuery);
 		}
+		*/
 
 		if (DAQmxFailed(error))
 			LOGE("DAQmx Error: ", errBuff);
