@@ -258,8 +258,7 @@ void NIDAQmx::connect()
 			}
 		}
 
-		// TODO: Get ADC resolution for each voltage range (throwing error as is)
-		/*
+		// Get ADC resolution for each voltage range (throwing error as is)
 		NIDAQ::TaskHandle adcResolutionQuery;
 
 		NIDAQ::DAQmxCreateTask("ADCResolutionQuery", &adcResolutionQuery);
@@ -272,7 +271,7 @@ void NIDAQmx::connect()
 
 			DAQmxErrChk(NIDAQ::DAQmxCreateAIVoltageChan(
 				adcResolutionQuery,			//task handle
-				STR2CHR(ai[0]->name),	    //NIDAQ physical channel name (e.g. dev1/ai1)
+				STR2CHR(ai[i]->getName()),	    //NIDAQ physical channel name (e.g. dev1/ai1)
 				"",							//user-defined channel name (optional)
 				DAQmx_Val_Cfg_Default,		//input terminal configuration
 				vRange.min,					//min input voltage
@@ -281,7 +280,7 @@ void NIDAQmx::connect()
 				NULL));
 
 			NIDAQ::float64 adcResolution;
-			DAQmxErrChk(NIDAQ::DAQmxGetAIResolution(adcResolutionQuery, STR2CHR(ai[0]->name), &adcResolution));
+			DAQmxErrChk(NIDAQ::DAQmxGetAIResolution(adcResolutionQuery, STR2CHR(ai[i]->getName()), &adcResolution));
 
 			device->adcResolutions.add(adcResolution);
 
@@ -289,7 +288,6 @@ void NIDAQmx::connect()
 
 		NIDAQ::DAQmxStopTask(adcResolutionQuery);
 		NIDAQ::DAQmxClearTask(adcResolutionQuery);
-		*/
 
 		// Get Digital Input Channels
 
@@ -333,13 +331,11 @@ Error:
 		if (DAQmxFailed(error))
 			NIDAQ::DAQmxGetExtendedErrorInfo(errBuff, ERR_BUFF_SIZE);
 
-		/*
 		if (adcResolutionQuery != 0) {
 			// DAQmx Stop Code
 			NIDAQ::DAQmxStopTask(adcResolutionQuery);
 			NIDAQ::DAQmxClearTask(adcResolutionQuery);
 		}
-		*/
 
 		if (DAQmxFailed(error))
 			LOGE("DAQmx Error: ", errBuff);
