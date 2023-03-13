@@ -43,10 +43,10 @@ jobs:
 #    - name: test
 #      run: cd build && ctest
     - name: deploy
+      if: github.ref == 'refs/heads/main'
       env:
         artifactoryApiKey: ${{ secrets.artifactoryApiKey }}
         build_dir: "Build/Release"
-        repo: ${{ github.event.repository.name }}
         package: NIDAQ-windows
       run: |
         plugin_api=$(grep -rnw ../../plugin-GUI/Source -e '#define PLUGIN_API_VER' | grep -Eo "[0-9]*" | tail -1)
