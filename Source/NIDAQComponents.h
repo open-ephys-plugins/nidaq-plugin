@@ -224,7 +224,7 @@ private:
 	int numActiveAnalogInputs = DEFAULT_NUM_ANALOG_INPUTS; //8
 	int numActiveDigitalInputs = DEFAULT_NUM_DIGITAL_INPUTS; //8
 
-	NIDAQ::float64		ai_data[CHANNEL_BUFFER_SIZE * DEFAULT_NUM_ANALOG_INPUTS];
+	HeapBlock<NIDAQ::float64> ai_data;
 
 	NIDAQ::uInt8		di_data_8[CHANNEL_BUFFER_SIZE];  //PXI devices use 8-bit read
 	NIDAQ::uInt16		di_data_16[CHANNEL_BUFFER_SIZE]; //some other devices may use 16-bit read? 

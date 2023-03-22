@@ -238,6 +238,34 @@ void NIDAQThread::selectFromAvailableDevices()
 
 }
 
+void NIDAQThread::updateAnalogChannels()
+{
+
+	sourceBuffers.removeLast();
+	sourceBuffers.add(new DataBuffer(getNumActiveAnalogInputs(), 10000));
+	mNIDAQ->aiBuffer = sourceBuffers.getLast();
+
+	for (auto& channel : mNIDAQ->ai)
+	{
+		if (!channel->isEnabled())
+			channel->setEnabled(true);
+	}
+
+	sourceStreams.clear();
+
+}
+
+void NIDAQThread::updateDigitalChannels()
+{
+
+	for (auto& channel : mNIDAQ->di)
+	{
+		if (!channel->isEnabled())
+			channel->setEnabled(true);
+	}
+
+}
+
 int NIDAQThread::swapConnection(String deviceName)
 {
 

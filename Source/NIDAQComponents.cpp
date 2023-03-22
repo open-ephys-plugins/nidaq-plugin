@@ -309,17 +309,15 @@ void NIDAQmx::connect()
 		{
 			StringArray channel_type;
 			channel_type.addTokens(channel_list[i], "/", "\"");
-			if (channel_list[i].length() > 0 && device->numDIChannels < numActiveDigitalInputs)
+			if (channel_list[i].length() > 0)
 			{
 				String name = channel_list[i].toRawUTF8();
-				LOGD("Found digital input: ", name);
+
 				di.add(new InputChannel(name));
 
+				di.getLast()->setAvailable(true);
 				if (device->numDIChannels++ < numActiveDigitalInputs)
-				{
-					di.getLast()->setAvailable(true);
 					di.getLast()->setEnabled(true);
-				}
 			}
 		}
 
@@ -383,6 +381,7 @@ void NIDAQmx::run()
 	NIDAQ::TaskHandle	taskHandleAI = 0;
 
 	aiBuffer->clear();
+	ai_data.malloc(CHANNEL_BUFFER_SIZE * numActiveAnalogInputs, sizeof(NIDAQ::float64));
 
 	String usePort;
 

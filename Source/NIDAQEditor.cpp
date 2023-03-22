@@ -536,7 +536,7 @@ void NIDAQEditor::draw()
 	desiredWidth = xOffset + 100;
 
 	background = new EditorBackground(nAI, nDI);
-	background->setBounds(0, 15, 500, 150);
+	background->setBounds(0, 15, 1000, 150);
 	addAndMakeVisible(background);
 	background->toBack();
 	background->repaint();
@@ -548,27 +548,34 @@ void NIDAQEditor::draw()
 
 void NIDAQEditor::update(int numAnalog, int numDigital, int digitalReadSize)
 {
-	if (numAnalog != thread->getNumActiveAnalogInputs() || numDigital != thread->getNumActiveDigitalInputs())
+
+	if (numAnalog != thread->getNumActiveAnalogInputs())
 	{
-
 		thread->setNumActiveAnalogChannels(numAnalog);
-		thread->setNumActiveDigitalChannels(numDigital);
-
-		draw();
-
-		((CallOutBox*)currentConfigWindow->getParentComponent())->dismiss();
+		thread->updateAnalogChannels();
 
 		CoreServices::updateSignalChain(this);
 
+		((CallOutBox*)currentConfigWindow->getParentComponent())->dismiss();
+	}
+
+	if (numDigital != thread->getNumActiveDigitalInputs())
+	{
+		thread->setNumActiveDigitalChannels(numDigital);
+		thread->updateDigitalChannels();
+
+		((CallOutBox*)currentConfigWindow->getParentComponent())->dismiss();
 	}
 
 	if (digitalReadSize != thread->getDigitalReadSize())
 	{
 		thread->setDigitalReadSize(digitalReadSize);
-
-		((CallOutBox*)currentConfigWindow->getParentComponent())->dismiss();
 	}
+
+	draw();
+
 }
+
 
 NIDAQEditor::~NIDAQEditor()
 {
@@ -761,6 +768,7 @@ void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 	if (numAnalog >= 0)
 	{
 		thread->setNumActiveAnalogChannels(numAnalog);
+		thread->updateAnalogChannels();
 	}
 
 	// Load number of active digital channels
@@ -769,6 +777,7 @@ void NIDAQEditor::loadCustomParametersFromXml(XmlElement* xml)
 	if (numDigital >= 0)
 	{
 		thread->setNumActiveDigitalChannels(numDigital);
+		thread->updateDigitalChannels();
 	}
 
 	// Load digital read size

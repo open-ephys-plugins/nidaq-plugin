@@ -97,6 +97,9 @@ public:
 	String getDeviceName() const { return mNIDAQ->device->getName(); };
 	String getProductName() const { return mNIDAQ->device->productName; };
 
+	void updateAnalogChannels();
+	void updateDigitalChannels();
+
 	// Returns total number of available analog inputs on device
 	int getTotalAvailableAnalogInputs() { return mNIDAQ->device->numAIChannels; }; 
 
