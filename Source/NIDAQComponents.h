@@ -36,6 +36,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_NUM_ANALOG_INPUTS 8
 #define DEFAULT_NUM_DIGITAL_INPUTS 8
 
+#define PORT_SIZE 8 //number of bits in a port
+
 #define NUM_SOURCE_TYPES 4
 #define NUM_SAMPLE_RATES 17
 #define CHANNEL_BUFFER_SIZE 500
@@ -178,20 +180,11 @@ public:
 	/* Connects to the active device */
 	void connect(); 
 
+	/* Unique device properties */
 	String getProductName() { return device->productName; };
 	String getSerialNumber() { return String(device->serialNum); };
 
-	void setNumActiveAnalogInputs(int numActiveAnalogInputs_) { numActiveAnalogInputs = numActiveAnalogInputs_; };
-	int getNumActiveAnalogInputs() { return numActiveAnalogInputs; };
-
-	void setNumActiveDigitalInputs(int numActiveDigitalInputs_) { numActiveDigitalInputs = numActiveDigitalInputs_; };
-	int getNumActiveDigitalInputs() { return numActiveDigitalInputs; };
-
-	int getActiveDigitalLines();
-
-	void setDigitalReadSize(int digitalReadSize_) { digitalReadSize = digitalReadSize_; };
-	int getDigitalReadSize() { return digitalReadSize; };
-
+	/* Analog configuration */
 	NIDAQ::float64 getSampleRate() { return sampleRates[sampleRateIndex]; };
 	void setSampleRate(int index) { sampleRateIndex = index; };
 
@@ -200,6 +193,19 @@ public:
 
 	SOURCE_TYPE getSourceTypeForInput(int analogIntputIndex) { return ai[analogIntputIndex]->getSourceType(); };
 	void toggleSourceType(int analogInputIndex) { ai[analogInputIndex]->setNextSourceType(); }
+
+	void setNumActiveAnalogInputs(int numActiveAnalogInputs_) { numActiveAnalogInputs = numActiveAnalogInputs_; };
+	int getNumActiveAnalogInputs() { return numActiveAnalogInputs; };
+
+	/*Digital configuration */
+	void setDigitalReadSize(int digitalReadSize_) { digitalReadSize = digitalReadSize_; };
+	int getDigitalReadSize() { return digitalReadSize; };
+
+	void setNumActiveDigitalInputs(int numActiveDigitalInputs_) { numActiveDigitalInputs = numActiveDigitalInputs_; };
+	int getNumActiveDigitalInputs() { return numActiveDigitalInputs; };
+
+	/* 32-bit mask indicating which lines are currently enabled */
+	uint32 getActiveDigitalLines();
 
 	void run();
 
@@ -226,12 +232,12 @@ private:
 
 	HeapBlock<NIDAQ::float64> ai_data;
 
-	NIDAQ::uInt8		di_data_8[CHANNEL_BUFFER_SIZE];  //PXI devices use 8-bit read
-	NIDAQ::uInt16		di_data_16[CHANNEL_BUFFER_SIZE]; //some other devices may use 16-bit read? 
-	NIDAQ::uInt32		di_data_32[CHANNEL_BUFFER_SIZE]; //USB devices use 32-bit read
+	HeapBlock<NIDAQ::uInt32> eventCodes;
 
 	int64 ai_timestamp;
 	uint64 eventCode;
+
+	std::map<int,int> digitalLineMap;
 
 	DataBuffer* aiBuffer;
 

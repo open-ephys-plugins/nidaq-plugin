@@ -311,6 +311,8 @@ void NIDAQmx::connect()
 			{
 				String name = channel_list[i].toRawUTF8();
 
+				LOGD("Found digital line: ", name);
+
 				di.add(new InputChannel(name));
 
 				di.getLast()->setAvailable(true);
@@ -347,12 +349,12 @@ Error:
 
 }
 
-int NIDAQmx::getActiveDigitalLines()
+uint32 NIDAQmx::getActiveDigitalLines()
 {
 	if (!getNumActiveDigitalInputs())
 		return 0;
 
-	uint16 linesEnabled = 0;
+	uint32 linesEnabled = 0;
 	for (int i = 0; i < di.size(); i++)
 	{
 		if (di[i]->isEnabled())
@@ -365,6 +367,12 @@ void NIDAQmx::run()
 {
 	/* Derived from NIDAQmx: ANSI C Example program: ContAI-ReadDigChan.c */
 
+	/* Single task to handle all analog inputs */
+	NIDAQ::TaskHandle	taskHandleAI = 0;
+
+	/* Potentially multiple tasks to handle different digital line properties */
+	std::vector<NIDAQ::TaskHandle>	taskHandlesDI = std::vector<NIDAQ::TaskHandle>();
+
 	NIDAQ::int32	error = 0;
 	char			errBuff[ERR_BUFF_SIZE] = { '\0' };
 
@@ -374,12 +382,11 @@ void NIDAQmx::run()
 
 	NIDAQ::int32		ai_read = 0;
 	static int			totalAIRead = 0;
-	NIDAQ::TaskHandle	taskHandleAI = 0;
 
 	aiBuffer->clear();
 	ai_data.malloc(CHANNEL_BUFFER_SIZE * numActiveAnalogInputs, sizeof(NIDAQ::float64));
 
-	String usePort;
+	eventCodes.malloc(CHANNEL_BUFFER_SIZE, sizeof(NIDAQ::uInt32));
 
 	/* Create an analog input task */
 	if (device->isUSBDevice)
@@ -439,54 +446,81 @@ void NIDAQmx::run()
 	/********CONFIG DIGITAL LINES********/
 	/************************************/
 
-	NIDAQ::int32		di_read = 0;
-	static int			totalDIRead = 0;
-	NIDAQ::TaskHandle	taskHandleDI = 0;
+	NIDAQ::int32					di_read = 0;
+	static int						totalDIRead = 0;
 
-	/* For now, restrict max num digital inputs until software buffering is implemented */
 	if (numActiveDigitalInputs)
 	{
+
+		LOGD("Active digital mask: ", getActiveDigitalLines());
 
 		char ports[2048];
 		NIDAQ::DAQmxGetDevDIPorts(STR2CHR(device->getName()), &ports[0], sizeof(ports));
 
+		LOGC("Got ports: ", ports);
+
 		StringArray port_list;
 		port_list.addTokens(&ports[0], ", ", "\"");
-		usePort = port_list[0];
 
-		/* Create a digital input task using device serial number to gurantee unique task name per device */
-		if (device->isUSBDevice)
-			DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_USB"+getSerialNumber()), &taskHandleDI));
-		else
-			DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_PXI"+getSerialNumber()), &taskHandleDI));
+		int portIdx = 0;
+		for (auto& port : port_list)
+		{
+			if (port.length() && portIdx < di.size() / PORT_SIZE)
+			{
 
-		/* Create a channel for each digital input */
-		DAQmxErrChk(NIDAQ::DAQmxCreateDIChan(
-			taskHandleDI,
-			STR2CHR(usePort),
-			"",
-			DAQmx_Val_ChanForAllLines));
+				NIDAQ::TaskHandle taskHandleDI = 0;
+				/* Create a digital input task using device serial number to gurantee unique task name per device */
+				if (device->isUSBDevice)
+					DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_USB"+getSerialNumber()+"port"+std::to_string(portIdx)), &taskHandleDI));
+				else
+					DAQmxErrChk(NIDAQ::DAQmxCreateTask(STR2CHR("DITask_PXI"+getSerialNumber()+"port"+std::to_string(portIdx)), &taskHandleDI));
+
+				/* Create a channel for each digital input */
+				DAQmxErrChk(NIDAQ::DAQmxCreateDIChan(
+					taskHandleDI,
+					STR2CHR(port),
+					"",
+					DAQmx_Val_ChanForAllLines)
+				);
+
+				/* In general, only Port0 supports hardware timing */
+				if (portIdx == 0)
+				{
+					if (numActiveAnalogInputs && numActiveDigitalInputs && !device->isUSBDevice) //USB devices do not have an internal clock and instead use CPU, so we can't configure the sample clock timing
+						DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
+							taskHandleDI,							//task handle
+							trigName,								//source : NULL means use internal clock, we will sync to analog input clock
+							getSampleRate(),						//rate : samples per second per channel
+							DAQmx_Val_Rising,						//activeEdge : (DAQmc_Val_Rising || DAQmx_Val_Falling)
+							DAQmx_Val_ContSamps,					//sampleMode : (DAQmx_Val_FiniteSamps || DAQmx_Val_ContSamps || DAQmx_Val_HWTimedSinglePoint)
+							CHANNEL_BUFFER_SIZE));					//sampsPerChanToAcquire : want to sync with analog samples per channel
+																	//If sampleMode == Dmx_Val_FiniteSamps : # of samples to acquire for each channel
+																	//Elif sampleMode == DAQAQmx_Val_ContSamps : circular buffer size
+				}
+
+				taskHandlesDI.push_back(taskHandleDI);
+
+				portIdx += 1;
+
+			}
+
+		}
 
 	}
 
 	LOGD("Is USB Device: ", device->isUSBDevice);
-	
-	if (numActiveAnalogInputs && numActiveDigitalInputs && !device->isUSBDevice) //USB devices do not have an internal clock and instead use CPU, so we can't configure the sample clock timing
-		DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
-			taskHandleDI,							//task handle
-			trigName,								//source : NULL means use internal clock, we will sync to analog input clock
-			getSampleRate(),				//rate : samples per second per channel
-			DAQmx_Val_Rising,						//activeEdge : (DAQmc_Val_Rising || DAQmx_Val_Falling)
-			DAQmx_Val_ContSamps,					//sampleMode : (DAQmx_Val_FiniteSamps || DAQmx_Val_ContSamps || DAQmx_Val_HWTimedSinglePoint)
-			CHANNEL_BUFFER_SIZE));					//sampsPerChanToAcquire : want to sync with analog samples per channel
-														//If sampleMode == DAQmx_Val_FiniteSamps : # of samples to acquire for each channel
-														//Elif sampleMode == DAQmx_Val_ContSamps : circular buffer size
 
 	// This order is necessary to get the timing right
 	if (numActiveAnalogInputs) DAQmxErrChk(NIDAQ::DAQmxTaskControl(taskHandleAI, DAQmx_Val_Task_Commit));
-	if (numActiveDigitalInputs) DAQmxErrChk(NIDAQ::DAQmxTaskControl(taskHandleDI, DAQmx_Val_Task_Commit));
+	if (numActiveDigitalInputs) {
+		for (auto& taskHandleDI : taskHandlesDI)
+			DAQmxErrChk(NIDAQ::DAQmxTaskControl(taskHandleDI, DAQmx_Val_Task_Commit));
+	}
 
-	if (numActiveDigitalInputs) DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleDI));
+	if (numActiveDigitalInputs) {
+		for (auto& taskHandleDI : taskHandlesDI)
+			DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleDI));
+	}
 	if (numActiveAnalogInputs) DAQmxErrChk(NIDAQ::DAQmxStartTask(taskHandleAI));
 
 	NIDAQ::int32 numSampsPerChan = CHANNEL_BUFFER_SIZE;
@@ -519,36 +553,65 @@ void NIDAQmx::run()
 
 		if (getActiveDigitalLines() > 0)
 		{
-			if (digitalReadSize == 32)
-				DAQmxErrChk(NIDAQ::DAQmxReadDigitalU32(
-					taskHandleDI,
-					numSampsPerChan,
-					timeout,
-					DAQmx_Val_GroupByScanNumber,
-					di_data_32,
-					numSampsPerChan,
-					&di_read,
-					NULL));
-			else if (digitalReadSize == 16)
-				DAQmxErrChk(NIDAQ::DAQmxReadDigitalU16(
-					taskHandleDI,
-					numSampsPerChan,
-					timeout,
-					DAQmx_Val_GroupByScanNumber,
-					di_data_16,
-					numSampsPerChan,
-					&di_read,
-					NULL));
-			else if (digitalReadSize == 8)
-				DAQmxErrChk(NIDAQ::DAQmxReadDigitalU8(
-					taskHandleDI,
-					numSampsPerChan,
-					timeout,
-					DAQmx_Val_GroupByScanNumber,
-					di_data_8,
-					numSampsPerChan,
-					&di_read,
-					NULL));
+
+			for (int i = 0; i < CHANNEL_BUFFER_SIZE; i++)
+				eventCodes[i] = 0;
+
+			int portIdx = 0;
+			for (auto& taskHandleDI : taskHandlesDI)
+			{
+
+				if (digitalReadSize == 32)
+				{
+					NIDAQ::uInt32 di_data_32_[CHANNEL_BUFFER_SIZE];
+					DAQmxErrChk(NIDAQ::DAQmxReadDigitalU32(
+						taskHandleDI,
+						numSampsPerChan,
+						timeout,
+						DAQmx_Val_GroupByScanNumber,
+						di_data_32_,
+						numSampsPerChan,
+						&di_read,
+						NULL));
+					for (int i = 0; i < numSampsPerChan; i++)
+						eventCodes[i] |= (di_data_32_[i] << PORT_SIZE*portIdx);
+				}
+				else if (digitalReadSize == 16)
+				{
+					NIDAQ::uInt16 di_data_16_[CHANNEL_BUFFER_SIZE];
+					DAQmxErrChk(NIDAQ::DAQmxReadDigitalU16(
+						taskHandleDI,
+						numSampsPerChan,
+						timeout,
+						DAQmx_Val_GroupByScanNumber,
+						di_data_16_,
+						numSampsPerChan,
+						&di_read,
+						NULL));
+					for (int i = 0; i < numSampsPerChan; i++)
+						eventCodes[i] |= (di_data_16_[i] << PORT_SIZE*portIdx);
+					
+				}
+				else if (digitalReadSize == 8)
+				{
+					NIDAQ::uInt8 di_data_8_[CHANNEL_BUFFER_SIZE];
+					DAQmxErrChk(NIDAQ::DAQmxReadDigitalU8(
+						taskHandleDI,
+						numSampsPerChan,
+						timeout,
+						DAQmx_Val_GroupByScanNumber,
+						di_data_8_,
+						numSampsPerChan,
+						&di_read,
+						NULL));
+					for (int i = 0; i < numSampsPerChan; i++)
+						eventCodes[i] |= (di_data_8_[i] << PORT_SIZE*portIdx);
+				}
+
+				portIdx++;
+
+			}
+
 		}
 
 		/*
@@ -571,21 +634,21 @@ void NIDAQmx::run()
 	
 			int channel = i % numActiveAnalogInputs;
 
-			aiSamples[channel] = 0;
-			if (ai[channel]->isEnabled())
-				aiSamples[channel] = ai_data[i];
+			aiSamples[channel] = ai[channel]->isEnabled() ? ai_data[i] : 0;
 
 			if (i % numActiveAnalogInputs == 0)
 			{
 				ai_timestamp++;
 				if (getActiveDigitalLines() > 0)
 				{
-					if (digitalReadSize == 32)
-						eventCode = di_data_32[count++] & getActiveDigitalLines();
-					else if (digitalReadSize == 16)
-						eventCode = di_data_16[count++] & getActiveDigitalLines();
-					else
-						eventCode = di_data_8[count++] & getActiveDigitalLines();
+					eventCode = eventCodes[count++] & getActiveDigitalLines();
+
+					if (!digitalLineMap.count(eventCode))
+					{
+						digitalLineMap[eventCode] = 1;
+						LOGD("Found event code: ", eventCode);
+					}
+
 				}
 				aiBuffer->addToBuffer(aiSamples, &ai_timestamp, &ts, &eventCode, 1);
 			}
@@ -602,8 +665,13 @@ void NIDAQmx::run()
 
 	if (numActiveAnalogInputs) NIDAQ::DAQmxStopTask(taskHandleAI);
 	if (numActiveAnalogInputs) NIDAQ::DAQmxClearTask(taskHandleAI);
-	if (numActiveDigitalInputs) NIDAQ::DAQmxStopTask(taskHandleDI);
-	if (numActiveDigitalInputs) NIDAQ::DAQmxClearTask(taskHandleDI);
+	if (numActiveDigitalInputs) {
+		for (auto& taskHandleDI : taskHandlesDI)
+		{
+			NIDAQ::DAQmxStopTask(taskHandleDI);
+			NIDAQ::DAQmxClearTask(taskHandleDI);
+		}
+	}
 
 	return;
 
@@ -618,10 +686,14 @@ Error:
 		NIDAQ::DAQmxClearTask(taskHandleAI);
 	}
 
-	if (taskHandleDI != 0) {
-		// DAQmx Stop Code
-		NIDAQ::DAQmxStopTask(taskHandleDI);
-		NIDAQ::DAQmxClearTask(taskHandleDI);
+	if (taskHandlesDI.size() > 0) {
+
+		for (auto& taskHandleDI : taskHandlesDI)
+		{
+			// DAQmx Stop Code
+			NIDAQ::DAQmxStopTask(taskHandleDI);
+			NIDAQ::DAQmxClearTask(taskHandleDI);
+		}
 	}
 	if (DAQmxFailed(error))
 		LOGE("DAQmx Error: ", errBuff);
