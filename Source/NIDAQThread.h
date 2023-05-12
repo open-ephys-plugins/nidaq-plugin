@@ -119,6 +119,11 @@ public:
 	int getDigitalReadSize() { return mNIDAQ->getDigitalReadSize(); };
 	void setDigitalReadSize(int size) { mNIDAQ->setDigitalReadSize(size); };
 
+	// Returns the state of the digital ports to be used as input
+	int getNumPorts() { return mNIDAQ->getNumPorts(); };
+	bool getPortState(int portIdx) { return mNIDAQ->getPortState(portIdx); };
+	void setPortState(int portIdx, bool state) { mNIDAQ->setPortState(portIdx, state); };
+
 	// Get a list of available devices
 	Array<NIDAQDevice*> getDevices();
 	int getDeviceIndex() { return deviceIndex; };

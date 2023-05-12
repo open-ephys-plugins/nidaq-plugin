@@ -36,7 +36,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define DEFAULT_NUM_ANALOG_INPUTS 8
 #define DEFAULT_NUM_DIGITAL_INPUTS 8
 
-#define PORT_SIZE 8 //number of bits in a port
+#define DEFAULT_DIGITAL_PORT 0
+
+#define PORT_SIZE 8
 
 #define NUM_SOURCE_TYPES 4
 #define NUM_SAMPLE_RATES 17
@@ -137,6 +139,9 @@ public:
 	Array<SettingsRange> voltageRanges;
 	Array<NIDAQ::float64> adcResolutions;
 
+	Array<std::string> digitalPortNames;
+	Array<bool> digitalPortStates;
+
 private:
 
 	String name;
@@ -206,6 +211,10 @@ public:
 
 	/* 32-bit mask indicating which lines are currently enabled */
 	uint32 getActiveDigitalLines();
+
+	int getNumPorts() { return device->digitalPortNames.size(); };
+	bool getPortState(int idx) { return device->digitalPortStates[idx]; };
+	void setPortState(int idx, bool state) { device->digitalPortStates.set(idx, state); };
 
 	void run();
 

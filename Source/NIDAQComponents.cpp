@@ -300,6 +300,8 @@ void NIDAQmx::connect()
 		channel_list.clear();
 		channel_list.addTokens(&di_channel_data[0], ", ", "\"");
 
+		device->digitalPortNames.clear();
+		device->digitalPortStates.clear();
 		device->numDIChannels = 0;
 		di.clear();
 
@@ -309,15 +311,28 @@ void NIDAQmx::connect()
 			channel_type.addTokens(channel_list[i], "/", "\"");
 			if (channel_list[i].length() > 0)
 			{
-				String name = channel_list[i].toRawUTF8();
+				String fullName = channel_list[i].toRawUTF8();
 
-				LOGD("Found digital line: ", name);
+				String lineName = fullName.fromFirstOccurrenceOf("/", false, false);
+				String portName = fullName.upToLastOccurrenceOf("/", false, false);
 
-				di.add(new InputChannel(name));
+				// Add port to list of ports
+				if (!device->digitalPortNames.contains(portName.toRawUTF8()))
+				{
+					device->digitalPortNames.add(portName.toRawUTF8());
+					if (device->numDIChannels < numActiveDigitalInputs)
+						device->digitalPortStates.add(true);
+					else
+						device->digitalPortStates.add(false);
+				}
+
+				di.add(new InputChannel(fullName));
 
 				di.getLast()->setAvailable(true);
-				if (device->numDIChannels++ < numActiveDigitalInputs)
+				if (device->numDIChannels < numActiveDigitalInputs)
 					di.getLast()->setEnabled(true);
+
+				device->numDIChannels++;
 			}
 		}
 
@@ -462,10 +477,14 @@ void NIDAQmx::run()
 		StringArray port_list;
 		port_list.addTokens(&ports[0], ", ", "\"");
 
+		for (int i = 0; i < device->digitalPortNames.size(); i++)
+			LOGD(device->digitalPortNames[i], " : ", device->digitalPortStates[i]);
+
 		int portIdx = 0;
 		for (auto& port : port_list)
 		{
-			if (port.length() && portIdx < di.size() / PORT_SIZE)
+
+			if (port.length() && portIdx < di.size() / PORT_SIZE && device->digitalPortStates[portIdx])
 			{
 
 				NIDAQ::TaskHandle taskHandleDI = 0;
@@ -500,9 +519,9 @@ void NIDAQmx::run()
 
 				taskHandlesDI.push_back(taskHandleDI);
 
-				portIdx += 1;
-
 			}
+
+			if (port.length()) portIdx++;
 
 		}
 

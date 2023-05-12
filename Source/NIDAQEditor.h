@@ -44,34 +44,6 @@ class NIDAQInterface;
 class Annotation;
 class ColorSelector;
 
-class PopupConfigurationWindow : public Component, public ComboBox::Listener
-{
-
-public:
-    
-    /** Constructor */
-    PopupConfigurationWindow(NIDAQEditor* editor);
-
-    /** Destructor */
-    ~PopupConfigurationWindow() { }
-
-	void comboBoxChanged(ComboBox*);
-
-private:
-
-	NIDAQEditor* editor;
-
-    ScopedPointer<Label>  analogLabel;
-    ScopedPointer<ComboBox> analogChannelCountSelect;
-
-	ScopedPointer<Label>  digitalLabel;
-	ScopedPointer<ComboBox> digitalChannelCountSelect;
-
-	ScopedPointer<Label>  digitalReadLabel;
-	ScopedPointer<ComboBox> digitalReadSelect;
-
-};
-
 class EditorBackground : public Component
 {
 public:
@@ -179,6 +151,39 @@ private:
 	NIDAQEditor* e;
 };
 
+class PopupConfigurationWindow : public Component, public ComboBox::Listener, public Button::Listener
+{
+
+public:
+    
+    /** Constructor */
+    PopupConfigurationWindow(NIDAQEditor* editor);
+
+    /** Destructor */
+    ~PopupConfigurationWindow() { }
+
+	void comboBoxChanged(ComboBox*);
+	void buttonClicked(Button* button) override;
+
+	void paint(Graphics& g) override;
+
+private:
+
+	NIDAQEditor* editor;
+
+    ScopedPointer<Label>  analogLabel;
+    ScopedPointer<ComboBox> analogChannelCountSelect;
+
+	ScopedPointer<Label>  digitalLabel;
+	ScopedPointer<ComboBox> digitalChannelCountSelect;
+
+	ScopedPointer<Label>  digitalReadLabel;
+	ScopedPointer<ComboBox> digitalReadSelect;
+
+	OwnedArray<ToggleButton> digitalPortButtons;
+
+};
+
 class NIDAQEditor : public GenericEditor, public ComboBox::Listener, public Button::Listener
 {
 public:
@@ -199,6 +204,12 @@ public:
 	/** Respond to button presses */
 	void buttonClicked(Button* button) override;
 
+	void startAcquisition() override;
+	void stopAcquisition() override;
+
+	void saveCustomParametersToXml(XmlElement*) override;
+	void loadCustomParametersFromXml(XmlElement*) override;
+
 	int getTotalAvailableAnalogInputs() { return thread->getTotalAvailableAnalogInputs(); };
 	int getTotalAvailableDigitalInputs() { return thread-> getTotalAvailableDigitalInputs(); };
 
@@ -206,12 +217,10 @@ public:
 	int getNumActiveDigitalInputs() { return thread->getNumActiveDigitalInputs(); };
 
 	int getDigitalReadSize() { return thread->getDigitalReadSize(); };
-
-	void startAcquisition() override;
-	void stopAcquisition() override;
-
-	void saveCustomParametersToXml(XmlElement*) override;
-	void loadCustomParametersFromXml(XmlElement*) override;
+	
+	int getNumPorts() { return thread->getNumPorts(); };
+	bool getPortState(int idx) { return thread->getPortState(idx); };
+	void setPortState(int idx, bool state) { thread->setPortState(idx, state); };
 
 private:
 
