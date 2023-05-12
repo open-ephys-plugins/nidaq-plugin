@@ -136,7 +136,8 @@ NIDAQmx::NIDAQmx(NIDAQDevice* device_)
 		15000.0f,
 		20000.0f,
 		25000.0f,
-		30000.0f
+		30000.0f,
+		40000.0f
 	};
 
 	sampleRates.clear();

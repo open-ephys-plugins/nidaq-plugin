@@ -41,7 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PORT_SIZE 8
 
 #define NUM_SOURCE_TYPES 4
-#define NUM_SAMPLE_RATES 17
+#define NUM_SAMPLE_RATES 18
 #define CHANNEL_BUFFER_SIZE 500
 #define ERR_BUFF_SIZE 2048
 
