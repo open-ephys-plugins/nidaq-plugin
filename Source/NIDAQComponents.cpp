@@ -506,7 +506,7 @@ void NIDAQmx::run()
 				/* In general, only Port0 supports hardware timing */
 				if (portIdx == 0)
 				{
-					if (numActiveAnalogInputs && numActiveDigitalInputs && !device->isUSBDevice) //USB devices do not have an internal clock and instead use CPU, so we can't configure the sample clock timing
+					if (numActiveAnalogInputs && numActiveDigitalInputs) //USB devices do not have an internal clock and instead use CPU, so we can't configure the sample clock timing
 						DAQmxErrChk(NIDAQ::DAQmxCfgSampClkTiming(
 							taskHandleDI,							//task handle
 							trigName,								//source : NULL means use internal clock, we will sync to analog input clock
