@@ -48,7 +48,7 @@ NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), inputAvailable(false)
 
 	dm->scanForDevices();
 
-	if (dm->getNumAvailableDevices() > 0 && dm->getDeviceAtIndex(0)->getName() != "SimulatedDevice")
+	if (dm->getNumAvailableDevices() > 0 && dm->getDeviceAtIndex(0)->getName() != "Simulated")
 		inputAvailable = true;
 
 	openConnection();
@@ -83,6 +83,9 @@ void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChanne
 	OwnedArray<DeviceInfo>* devices,
 	OwnedArray<ConfigurationObject>* configurationObjects)
 {
+
+	if (!foundInputSource())
+		return;
 
 	if (sourceStreams.size() == 0) // initialize data streams
 	{

@@ -384,12 +384,14 @@ void NIDAQEditor::draw()
 		addAndMakeVisible(a);
 		aiButtons.add(a);
 
-		SOURCE_TYPE sourceType = thread->getSourceTypeForInput(i);
-		LOGD("Got source type for input ", i, ": ", sourceType);
+		SOURCE_TYPE sourceType = SOURCE_TYPE::RSE;
+		if (thread->foundInputSource())
+			sourceType = thread->getSourceTypeForInput(i);
 
 		SourceTypeButton* b = new SourceTypeButton(i, thread, sourceType);
 		b->setBounds(xOffset+17, y_pos-2, 27, 17);
 		b->addListener(this);
+		b->setEnabled(thread->foundInputSource());
 		addAndMakeVisible(b);
 		sourceTypeButtons.add(b);
 
@@ -409,6 +411,7 @@ void NIDAQEditor::draw()
 		DIButton* b = new DIButton(i, thread);
 		b->setBounds(xOffset, y_pos, 15, 15);
 		b->addListener(this);
+		//b->setEnabled(thread->foundInputSource());
 		addAndMakeVisible(b);
 		diButtons.add(b);
 
@@ -544,7 +547,9 @@ void NIDAQEditor::stopAcquisition()
 /** Respond to button presses */
 void NIDAQEditor::buttonClicked(Button* button)
 {
-	buttonEvent(button);
+	// Ignore any button presses if there is no input source
+	if (thread->foundInputSource())
+		buttonEvent(button);
 }
 
 void NIDAQEditor::comboBoxChanged(ComboBox* comboBox)

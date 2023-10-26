@@ -159,7 +159,7 @@ void NIDAQmx::connect()
 
 	String deviceName = device->getName();
 
-	if (deviceName == "SimulatedDevice")
+	if (deviceName == "Simulated")
 	{
 
 		device->isUSBDevice = false;
@@ -473,7 +473,7 @@ void NIDAQmx::run()
 		char ports[2048];
 		NIDAQ::DAQmxGetDevDIPorts(STR2CHR(device->getName()), &ports[0], sizeof(ports));
 
-		LOGC("Got ports: ", ports);
+		LOGD("Detected ports: ", ports);
 
 		StringArray port_list;
 		port_list.addTokens(&ports[0], ", ", "\"");
