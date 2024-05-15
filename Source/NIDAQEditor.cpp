@@ -39,7 +39,7 @@ void EditorBackground::paint(Graphics& g)
 
 		float aiChanOffsetX = 15; //pixels
 		float aiChanOffsetY = 12; //pixels
-		float aiChanWidth = 70;   //pixels
+		float aiChanWidth = 80;   //pixels
 		float aiChanHeight = 22;  //pixels TODO: normalize
 		float paddingX = 1.07;
 		float paddingY = 1.18;
@@ -128,8 +128,8 @@ void EditorBackground::paint(Graphics& g)
 		g.setFont(10);
 		
 		g.drawText(String("DEVICE"), settingsOffsetX, 13, 100, 10, Justification::centredLeft);
-		g.drawText(String("SAMPLE RATE"), settingsOffsetX, 45, 100, 10, Justification::centredLeft);
-		g.drawText(String("AI VOLTAGE RANGE"), settingsOffsetX, 77, 100, 10, Justification::centredLeft);
+		g.drawText(String("SAMPLE RATE"), settingsOffsetX, 47, 100, 10, Justification::centredLeft);
+		g.drawText(String("AI VOLTAGE RANGE"), settingsOffsetX, 80, 100, 10, Justification::centredLeft);
 
 		/*
 		g.drawText(String("USAGE"), settingsOffsetX, 77, 100, 10, Justification::centredLeft);
@@ -307,6 +307,8 @@ void SourceTypeButton::update(SOURCE_TYPE sourceType)
 	default:
 		break;
 	}
+
+	changeWidthToFitText();
 }
 
 void SourceTypeButton::timerCallback()
@@ -375,8 +377,8 @@ void NIDAQEditor::draw()
 
 		int colIndex = i / aiChannelsPerColumn;
 		int rowIndex = i % aiChannelsPerColumn + 1;
-		xOffset = colIndex * 75 + 40;
-		int y_pos = 5 + rowIndex * 26;
+		xOffset = colIndex * 86 + 40;
+		int y_pos = 4 + rowIndex * 26;
 
 		AIButton* a = new AIButton(i, thread);
 		a->setBounds(xOffset, y_pos, 15, 15);
@@ -389,7 +391,8 @@ void NIDAQEditor::draw()
 			sourceType = thread->getSourceTypeForInput(i);
 
 		SourceTypeButton* b = new SourceTypeButton(i, thread, sourceType);
-		b->setBounds(xOffset+17, y_pos-2, 27, 17);
+		b->setBounds(xOffset+17, y_pos-1, 32, 17);
+		b->changeWidthToFitText();
 		b->addListener(this);
 		b->setEnabled(thread->foundInputSource());
 		addAndMakeVisible(b);
@@ -405,7 +408,7 @@ void NIDAQEditor::draw()
 
 		int colIndex = i / diChannelsPerColumn;
 		int rowIndex = i % diChannelsPerColumn + 1;
-		xOffset = ((nAI % maxChannelsPerColumn == 0 ? 0 : 1) + nAI / aiChannelsPerColumn) * 75 + 38 + colIndex * 45;
+		xOffset = ((nAI % maxChannelsPerColumn == 0 ? 0 : 1) + nAI / aiChannelsPerColumn) * 86 + 38 + colIndex * 45;
 		int y_pos = 5 + rowIndex * 26;
 
 		DIButton* b = new DIButton(i, thread);
@@ -434,7 +437,7 @@ void NIDAQEditor::draw()
 		deviceSelectBox->setEnabled(false);
 
 	sampleRateSelectBox = new ComboBox("SampleRateSelectBox");
-	sampleRateSelectBox->setBounds(xOffset, 70, 85, 20);
+	sampleRateSelectBox->setBounds(xOffset, 72, 85, 20);
 	Array<NIDAQ::float64> sampleRates = t->getSampleRates();
 	for (int i = 0; i < sampleRates.size(); i++)
 	{
@@ -445,7 +448,7 @@ void NIDAQEditor::draw()
 	addAndMakeVisible(sampleRateSelectBox);
 
 	voltageRangeSelectBox = new ComboBox("VoltageRangeSelectBox");
-	voltageRangeSelectBox->setBounds(xOffset, 101, 85, 20);
+	voltageRangeSelectBox->setBounds(xOffset, 105, 85, 20);
 	Array<SettingsRange> voltageRanges = t->getVoltageRanges();
 	for (int i = 0; i < voltageRanges.size(); i++)
 	{
