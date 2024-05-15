@@ -452,7 +452,8 @@ void NIDAQEditor::draw()
 	Array<SettingsRange> voltageRanges = t->getVoltageRanges();
 	for (int i = 0; i < voltageRanges.size(); i++)
 	{
-		String rangeString = String(voltageRanges[i].min) + " - " + String(voltageRanges[i].max) + " V";
+		//String rangeString = String(voltageRanges[i].min) + " - " + String(voltageRanges[i].max) + " V";
+		String rangeString = String(voltageRanges[i].min) + " to " + String(voltageRanges[i].max) + " V";
 		voltageRangeSelectBox->addItem(rangeString, i + 1);
 	}
 	voltageRangeSelectBox->setSelectedItemIndex(t->getVoltageRangeIndex(), false);
