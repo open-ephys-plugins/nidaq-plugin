@@ -50,14 +50,14 @@ void EditorBackground::paint(Graphics& g)
 			int colIndex = i / aiChannelsPerColumn;
 			int rowIndex = i % aiChannelsPerColumn;
 
-			g.setColour(Colours::lightgrey);
+			g.setColour(findColour(ThemeColors::outline));
 			g.drawRoundedRectangle(
 				aiChanOffsetX + paddingX * colIndex * aiChanWidth,
 				aiChanOffsetY + paddingY * rowIndex * aiChanHeight,
-				aiChanWidth, aiChanHeight, 4, 3);
+				aiChanWidth, aiChanHeight, 4, 1);
 
 
-			g.setColour(Colours::darkgrey);
+			g.setColour(findColour(ThemeColors::outline));
 
 			g.drawRoundedRectangle(
 				aiChanOffsetX + paddingX * colIndex * aiChanWidth,
@@ -99,13 +99,13 @@ void EditorBackground::paint(Graphics& g)
 			int colIndex = i / diChannelsPerColumn;
 			int rowIndex = i % diChannelsPerColumn;
 
-			g.setColour(Colours::lightgrey);
+			g.setColour(findColour(ThemeColors::outline));
 			g.drawRoundedRectangle(
 				diChanOffsetX + paddingX * colIndex * diChanWidth,
 				diChanOffsetY + paddingY * rowIndex * diChanHeight,
-				diChanWidth, diChanHeight, 4, 3);
+				diChanWidth, diChanHeight, 4, 1);
 
-			g.setColour(Colours::darkgrey);
+			g.setColour(findColour(ThemeColors::outline));
 			g.drawRoundedRectangle(
 				diChanOffsetX + paddingX * colIndex * diChanWidth,
 				diChanOffsetY + paddingY * rowIndex * diChanHeight,
@@ -124,7 +124,7 @@ void EditorBackground::paint(Graphics& g)
 
 		//FIFO monitor label
 		float settingsOffsetX = diChanOffsetX + ((nDI % maxChannelsPerColumn == 0 ? 0 : 1) + nDI / diChannelsPerColumn) * paddingX * diChanWidth + 5;
-		g.setColour(Colours::darkgrey);
+		g.setColour(findColour(ThemeColors::defaultText));
 		g.setFont(10);
 		
 		g.drawText(String("DEVICE"), settingsOffsetX, 13, 100, 10, Justification::centredLeft);
