@@ -155,10 +155,10 @@ public:
 	float getSampleRate();
 
 	/** Responds to broadcast messages sent during acquisition */
-	void handleBroadcastMessage(String msg) override;
+	void handleBroadcastMessage(const String& msg, const int64 systemTimeMillis) override;
 
 	/** Responds to config messages sent while acquisition is stopped */
-	String handleConfigMessage(String msg) override;
+	String handleConfigMessage(const String& msg) override;
 
 	CriticalSection* getMutex()
 	{
