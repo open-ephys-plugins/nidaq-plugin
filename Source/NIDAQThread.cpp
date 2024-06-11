@@ -25,345 +25,317 @@
 #include "NIDAQEditor.h"
 #include <stdexcept>
 
-DataThread* NIDAQThread::createDataThread(SourceNode *sn)
+DataThread* NIDAQThread::createDataThread (SourceNode* sn)
 {
-	return new NIDAQThread(sn);
+    return new NIDAQThread (sn);
 }
 
-std::unique_ptr<GenericEditor> NIDAQThread::createEditor(SourceNode* sn)
+std::unique_ptr<GenericEditor> NIDAQThread::createEditor (SourceNode* sn)
 {
+    std::unique_ptr<NIDAQEditor> ed = std::make_unique<NIDAQEditor> (sn, this);
 
-	std::unique_ptr<NIDAQEditor> ed = std::make_unique<NIDAQEditor>(sn, this);
+    editor = ed.get();
 
-	editor = ed.get();
-
-	return ed;
-
+    return ed;
 }
 
-NIDAQThread::NIDAQThread(SourceNode* sn) : DataThread(sn), inputAvailable(false)
+NIDAQThread::NIDAQThread (SourceNode* sn) : DataThread (sn), inputAvailable (false)
 {
+    dm = new NIDAQmxDeviceManager();
 
-	dm = new NIDAQmxDeviceManager();
+    dm->scanForDevices();
 
-	dm->scanForDevices();
+    if (dm->getNumAvailableDevices() > 0 && dm->getDeviceAtIndex (0)->getName() != "Simulated")
+        inputAvailable = true;
 
-	if (dm->getNumAvailableDevices() > 0 && dm->getDeviceAtIndex(0)->getName() != "Simulated")
-		inputAvailable = true;
-
-	openConnection();
+    openConnection();
 }
 
 NIDAQThread::~NIDAQThread()
 {
 }
 
-void NIDAQThread::initialize(bool signalChainIsLoading)
+void NIDAQThread::initialize (bool signalChainIsLoading)
 {
-	//Used in Neuropixels to initialize probes in background -- not needed for NIDAQ devices
-	//editor->initialize(signalChainIsLoading);
-
+    //Used in Neuropixels to initialize probes in background -- not needed for NIDAQ devices
+    //editor->initialize(signalChainIsLoading);
 }
 
-String NIDAQThread::handleConfigMessage(const String& msg)
+String NIDAQThread::handleConfigMessage (const String& msg)
 {
-	//TODO:
-	return " ";
+    //TODO:
+    return " ";
 }
 
-void NIDAQThread::handleBroadcastMessage(const String& msg, const int64 systemTimeMillis)
+void NIDAQThread::handleBroadcastMessage (const String& msg, const int64 systemTimeMillis)
 {
-	//TODO
+    //TODO
 }
 
-void NIDAQThread::updateSettings(OwnedArray<ContinuousChannel>* continuousChannels,
-	OwnedArray<EventChannel>* eventChannels,
-	OwnedArray<SpikeChannel>* spikeChannels,
-	OwnedArray<DataStream>* dataStreams,
-	OwnedArray<DeviceInfo>* devices,
-	OwnedArray<ConfigurationObject>* configurationObjects)
+void NIDAQThread::updateSettings (OwnedArray<ContinuousChannel>* continuousChannels,
+                                  OwnedArray<EventChannel>* eventChannels,
+                                  OwnedArray<SpikeChannel>* spikeChannels,
+                                  OwnedArray<DataStream>* dataStreams,
+                                  OwnedArray<DeviceInfo>* devices,
+                                  OwnedArray<ConfigurationObject>* configurationObjects)
 {
+    if (! foundInputSource())
+        return;
 
-	if (!foundInputSource())
-		return;
+    if (sourceStreams.size() == 0) // initialize data streams
+    {
+        DataStream::Settings settings {
+            getProductName(),
+            "Analog input channels from a NIDAQ device",
+            "identifier",
 
-	if (sourceStreams.size() == 0) // initialize data streams
-	{
+            getSampleRate()
 
-		DataStream::Settings settings
-		{
-			getProductName(),
-			"Analog input channels from a NIDAQ device",
-			"identifier",
+        };
 
-			getSampleRate()
+        sourceStreams.add (new DataStream (settings));
+    }
+    else if (sourceStreams[0]->getSampleRate() != getSampleRate())
+    {
+        sourceStreams.clear();
 
-		};
+        DataStream::Settings settings {
+            getProductName(),
+            "Analog input channels from a NIDAQ device",
+            "identifier",
 
-		sourceStreams.add(new DataStream(settings));
+            getSampleRate()
 
-	}
-	else if (sourceStreams[0]->getSampleRate() != getSampleRate())
-	{
+        };
 
-		sourceStreams.clear();
+        sourceStreams.add (new DataStream (settings));
+    }
 
-		DataStream::Settings settings
-		{
-			getProductName(),
-			"Analog input channels from a NIDAQ device",
-			"identifier",
+    dataStreams->clear();
+    eventChannels->clear();
+    continuousChannels->clear();
+    spikeChannels->clear();
+    devices->clear();
+    configurationObjects->clear();
 
-			getSampleRate()
+    for (int i = 0; i < sourceStreams.size(); i++)
+    {
+        DataStream* currentStream = sourceStreams[i];
 
-		};
+        currentStream->setName (getProductName());
 
-		sourceStreams.add(new DataStream(settings));
+        currentStream->clearChannels();
 
-	}
+        for (int ch = 0; ch < getNumActiveAnalogInputs(); ch++)
+        {
+            if (mNIDAQ->ai[ch]->isEnabled())
+            {
+                float bitVolts = mNIDAQ->getVoltageRange().max / float (0x7fff);
 
-	dataStreams->clear();
-	eventChannels->clear();
-	continuousChannels->clear();
-	spikeChannels->clear();
-	devices->clear();
-	configurationObjects->clear();
+                ContinuousChannel::Settings settings {
+                    ContinuousChannel::Type::ADC,
+                    "AI" + String (ch),
+                    "Analog Input channel from a NIDAQ device",
+                    "identifier",
 
-	for (int i = 0; i < sourceStreams.size(); i++)
-	{
-		DataStream* currentStream = sourceStreams[i];
+                    bitVolts,
 
-		currentStream->setName(getProductName());
+                    currentStream
+                };
 
-		currentStream->clearChannels();
+                continuousChannels->add (new ContinuousChannel (settings));
+            }
+        }
 
-		for (int ch = 0; ch < getNumActiveAnalogInputs(); ch++)
-		{
+        EventChannel::Settings settings {
+            EventChannel::Type::TTL,
+            getProductName() + "Digital Input Line",
+            "Digital Line from a NIDAQ device containing " + String (mNIDAQ->di.size()) + " inputs",
+            "identifier",
+            currentStream,
+            mNIDAQ->di.size()
+        };
 
-			if (mNIDAQ->ai[ch]->isEnabled())
-			{
+        eventChannels->add (new EventChannel (settings));
 
-				float bitVolts = mNIDAQ->getVoltageRange().max / float(0x7fff);
-
-				ContinuousChannel::Settings settings{
-					ContinuousChannel::Type::ADC,
-					"AI" + String(ch),
-					"Analog Input channel from a NIDAQ device",
-					"identifier",
-
-					bitVolts,
-
-					currentStream
-				};
-
-				continuousChannels->add(new ContinuousChannel(settings));
-
-			}
-
-		}
-
-		EventChannel::Settings settings{
-			EventChannel::Type::TTL,
-			getProductName() + "Digital Input Line",
-			"Digital Line from a NIDAQ device containing " + String(mNIDAQ->di.size()) + " inputs",
-			"identifier",
-			currentStream,
-			mNIDAQ->di.size()
-		};
-
-		eventChannels->add(new EventChannel(settings));
-
-		dataStreams->add(new DataStream(*currentStream)); // copy existing stream
-
-	}
-
+        dataStreams->add (new DataStream (*currentStream)); // copy existing stream
+    }
 }
 
 Array<NIDAQDevice*> NIDAQThread::getDevices()
 {
-	Array<NIDAQDevice*> deviceList;
+    Array<NIDAQDevice*> deviceList;
 
-	for (int i = 0; i < dm->getNumAvailableDevices(); i++)
-		deviceList.add(dm->getDeviceAtIndex(i));
+    for (int i = 0; i < dm->getNumAvailableDevices(); i++)
+        deviceList.add (dm->getDeviceAtIndex (i));
 
-	return deviceList;
+    return deviceList;
 }
 
 int NIDAQThread::openConnection()
 {
+    mNIDAQ = new NIDAQmx (dm->getDeviceAtIndex (0));
 
-	mNIDAQ = new NIDAQmx(dm->getDeviceAtIndex(0));
+    sourceBuffers.add (new DataBuffer (getNumActiveAnalogInputs(), 10000));
 
-	sourceBuffers.add(new DataBuffer(getNumActiveAnalogInputs(), 10000));
+    mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
-	mNIDAQ->aiBuffer = sourceBuffers.getLast();
+    sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+    setSampleRate (sampleRateIndex);
 
-	sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
-	setSampleRate(sampleRateIndex);
+    voltageRangeIndex = mNIDAQ->device->voltageRanges.size() - 1;
+    setVoltageRange (voltageRangeIndex);
 
-	voltageRangeIndex = mNIDAQ->device->voltageRanges.size() - 1;
-	setVoltageRange(voltageRangeIndex);
-
-	return 0;
-
+    return 0;
 }
 
 void NIDAQThread::selectFromAvailableDevices()
 {
+    PopupMenu deviceSelect;
+    StringArray productNames;
 
-	PopupMenu deviceSelect;
-	StringArray productNames;
+    for (int i = 0; i < getNumAvailableDevices(); i++)
+    {
+        String productName = dm->getDeviceAtIndex (i)->productName;
+        if (! (productName == getProductName()))
+        {
+            productNames.add (productName);
+            deviceSelect.addItem (productNames.size(), "Swap to " + productName);
+        }
+    }
+    int selectedDeviceIndex = deviceSelect.show();
 
-	for (int i = 0; i < getNumAvailableDevices(); i++)
-	{
-		String productName = dm->getDeviceAtIndex(i)->productName;
-		if (!(productName == getProductName()))
-		{
-			productNames.add(productName);
-			deviceSelect.addItem(productNames.size(), "Swap to " + productName);
-		}
-	}
-	int selectedDeviceIndex = deviceSelect.show();
+    if (selectedDeviceIndex == 0) //user clicked outside of popup window
+        return;
 
-	if (selectedDeviceIndex == 0) //user clicked outside of popup window
-		return;
+    String selectedProduct = productNames[selectedDeviceIndex - 1];
 
-	String selectedProduct = productNames[selectedDeviceIndex - 1];
-
-	for (auto& dev : getDevices())
-	{
-		if (dev->productName == selectedProduct)
-		{
-			swapConnection(dev->getName());
-			break;
-		}
-	}
-
+    for (auto& dev : getDevices())
+    {
+        if (dev->productName == selectedProduct)
+        {
+            swapConnection (dev->getName());
+            break;
+        }
+    }
 }
 
 void NIDAQThread::updateAnalogChannels()
 {
+    sourceBuffers.removeLast();
+    sourceBuffers.add (new DataBuffer (getNumActiveAnalogInputs(), 10000));
+    mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
-	sourceBuffers.removeLast();
-	sourceBuffers.add(new DataBuffer(getNumActiveAnalogInputs(), 10000));
-	mNIDAQ->aiBuffer = sourceBuffers.getLast();
+    for (auto& channel : mNIDAQ->ai)
+    {
+        if (! channel->isEnabled())
+            channel->setEnabled (true);
+    }
 
-	for (auto& channel : mNIDAQ->ai)
-	{
-		if (!channel->isEnabled())
-			channel->setEnabled(true);
-	}
-
-	sourceStreams.clear();
-
+    sourceStreams.clear();
 }
 
 void NIDAQThread::updateDigitalChannels()
 {
-
-	for (auto& channel : mNIDAQ->di)
-	{
-		if (!channel->isEnabled())
-			channel->setEnabled(true);
-	}
-
+    for (auto& channel : mNIDAQ->di)
+    {
+        if (! channel->isEnabled())
+            channel->setEnabled (true);
+    }
 }
 
-int NIDAQThread::swapConnection(String deviceName)
+int NIDAQThread::swapConnection (String deviceName)
 {
+    int deviceIdx = -1;
 
-	int deviceIdx = -1;
+    for (auto& dev : getDevices())
+    {
+        deviceIdx++;
 
-	for (auto& dev : getDevices())
-	{
+        if (dev->getName() == deviceName)
+        {
+            mNIDAQ = new NIDAQmx (dev);
 
-		deviceIdx++;
+            sourceBuffers.removeLast();
+            sourceBuffers.add (new DataBuffer (getNumActiveAnalogInputs(), 10000));
+            mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
-		if (dev->getName() == deviceName)
-		{
-			mNIDAQ = new NIDAQmx(dev);
+            deviceIndex = deviceIdx;
+            setDeviceIndex (deviceIndex);
 
-			sourceBuffers.removeLast();
-			sourceBuffers.add(new DataBuffer(getNumActiveAnalogInputs(), 10000));
-			mNIDAQ->aiBuffer = sourceBuffers.getLast();
+            sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+            setSampleRate (sampleRateIndex);
 
-			deviceIndex = deviceIdx;
-			setDeviceIndex(deviceIndex);
+            voltageRangeIndex = mNIDAQ->device->voltageRanges.size() - 1;
+            setVoltageRange (voltageRangeIndex);
 
-			sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
-			setSampleRate(sampleRateIndex);
+            sourceStreams.clear();
 
-			voltageRangeIndex = mNIDAQ->device->voltageRanges.size() - 1;
-			setVoltageRange(voltageRangeIndex);
+            break;
+        }
+    }
 
-			sourceStreams.clear();
+    setDeviceIndex (deviceIdx);
 
-			break;
-		}
-	}
-
-	setDeviceIndex(deviceIdx);
-
-	return deviceIdx;
-
+    return deviceIdx;
 }
 
-void NIDAQThread::toggleSourceType(int id)
+void NIDAQThread::toggleSourceType (int id)
 {
-	mNIDAQ->toggleSourceType(id);
+    mNIDAQ->toggleSourceType (id);
 }
 
-SOURCE_TYPE NIDAQThread::getSourceTypeForInput(int index)
+SOURCE_TYPE NIDAQThread::getSourceTypeForInput (int index)
 {
-	return mNIDAQ->ai[index]->getSourceType();
+    return mNIDAQ->ai[index]->getSourceType();
 }
 
 void NIDAQThread::closeConnection()
 {
 }
 
-bool NIDAQThread::toggleAIChannel(int index)
+bool NIDAQThread::toggleAIChannel (int index)
 {
-	mNIDAQ->ai[index]->setEnabled(!mNIDAQ->ai[index]->isEnabled());
-	return mNIDAQ->ai[index]->isEnabled();
+    mNIDAQ->ai[index]->setEnabled (! mNIDAQ->ai[index]->isEnabled());
+    return mNIDAQ->ai[index]->isEnabled();
 }
 
-bool NIDAQThread::toggleDIChannel(int index)
+bool NIDAQThread::toggleDIChannel (int index)
 {
-	mNIDAQ->di[index]->setEnabled(!mNIDAQ->di[index]->isEnabled());
-	return mNIDAQ->di[index]->isEnabled();
+    mNIDAQ->di[index]->setEnabled (! mNIDAQ->di[index]->isEnabled());
+    return mNIDAQ->di[index]->isEnabled();
 }
 
-void NIDAQThread::setDeviceIndex(int index)
+void NIDAQThread::setDeviceIndex (int index)
 {
-	deviceIndex = index;
+    deviceIndex = index;
 }
 
-void NIDAQThread::setVoltageRange(int rangeIndex)
+void NIDAQThread::setVoltageRange (int rangeIndex)
 {
-	voltageRangeIndex = rangeIndex;
-	mNIDAQ->setVoltageRange(rangeIndex);
+    voltageRangeIndex = rangeIndex;
+    mNIDAQ->setVoltageRange (rangeIndex);
 }
 
-void NIDAQThread::setSampleRate(int rateIndex)
+void NIDAQThread::setSampleRate (int rateIndex)
 {
-	sampleRateIndex = rateIndex;
-	mNIDAQ->setSampleRate(rateIndex);
+    sampleRateIndex = rateIndex;
+    mNIDAQ->setSampleRate (rateIndex);
 }
 
 float NIDAQThread::getSampleRate()
 {
-	return mNIDAQ->getSampleRate();
+    return mNIDAQ->getSampleRate();
 }
 
 Array<SettingsRange> NIDAQThread::getVoltageRanges()
 {
-	return mNIDAQ->device->voltageRanges;
+    return mNIDAQ->device->voltageRanges;
 }
 
 Array<NIDAQ::float64> NIDAQThread::getSampleRates()
 {
-	return mNIDAQ->sampleRates;
+    return mNIDAQ->sampleRates;
 }
 
 bool NIDAQThread::foundInputSource()
@@ -373,22 +345,19 @@ bool NIDAQThread::foundInputSource()
 
 XmlElement NIDAQThread::getInfoXml()
 {
+    //TODO:
+    XmlElement nidaq_info ("NI-DAQmx");
+    XmlElement* api_info = new XmlElement ("API");
+    //api_info->setAttribute("version", api.version);
+    nidaq_info.addChildElement (api_info);
 
-	//TODO: 
-	XmlElement nidaq_info("NI-DAQmx");
-	XmlElement* api_info = new XmlElement("API");
-	//api_info->setAttribute("version", api.version);
-	nidaq_info.addChildElement(api_info);
-
-	return nidaq_info;
-
+    return nidaq_info;
 }
 
 /** Initializes data transfer.*/
 bool NIDAQThread::startAcquisition()
 {
-	
-	mNIDAQ->startThread();
+    mNIDAQ->startThread();
 
     return true;
 }
@@ -396,11 +365,10 @@ bool NIDAQThread::startAcquisition()
 /** Stops data transfer.*/
 bool NIDAQThread::stopAcquisition()
 {
-
-	if (mNIDAQ->isThreadRunning())
-	{
-		mNIDAQ->signalThreadShouldExit();
-	}
+    if (mNIDAQ->isThreadRunning())
+    {
+        mNIDAQ->signalThreadShouldExit();
+    }
     return true;
 }
 
@@ -477,5 +445,5 @@ void NIDAQThread::setAutoRestart(bool restart)
 
 bool NIDAQThread::updateBuffer()
 {
-	return true;
+    return true;
 }

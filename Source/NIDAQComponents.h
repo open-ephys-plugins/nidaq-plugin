@@ -45,211 +45,204 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define CHANNEL_BUFFER_SIZE 500
 #define ERR_BUFF_SIZE 2048
 
-#define STR2CHR( jString ) ((jString).toUTF8())
-#define DAQmxErrChk(functionCall) if( DAQmxFailed(error=(functionCall)) ) goto Error; else
+#define STR2CHR(jString) ((jString).toUTF8())
+#define DAQmxErrChk(functionCall)             \
+    if (DAQmxFailed (error = (functionCall))) \
+        goto Error;                           \
+    else
 
 class NIDAQmx;
 class InputChannel;
 class AnalogInput;
 class DigitalInput;
 
-enum SOURCE_TYPE {
-	RSE = 0,
-	NRSE,
-	DIFF,
-	PSEUDO_DIFF
+enum SOURCE_TYPE
+{
+    RSE = 0,
+    NRSE,
+    DIFF,
+    PSEUDO_DIFF
 };
 
-struct SettingsRange {
-	NIDAQ::float64 min, max;
-	SettingsRange() : min(0), max(0) {}
-	SettingsRange(NIDAQ::float64 min_, NIDAQ::float64 max_)
-		: min(min_), max(max_) {}
+struct SettingsRange
+{
+    NIDAQ::float64 min, max;
+    SettingsRange() : min (0), max (0) {}
+    SettingsRange (NIDAQ::float64 min_, NIDAQ::float64 max_)
+        : min (min_), max (max_) {}
 };
 
 class InputChannel
 {
 public:
-	InputChannel(String name_) : name(name_) {};
-	InputChannel() : name("") {};
-	~InputChannel() {};
+    InputChannel (String name_) : name (name_) {};
+    InputChannel() : name ("") {};
+    ~InputChannel() {};
 
-	String getName() { return name; }
+    String getName() { return name; }
 
-	// Defines if the channel is available for use
-	void setAvailable(bool available_) { available = available_; }
-	bool isAvailable() { return available; }
+    // Defines if the channel is available for use
+    void setAvailable (bool available_) { available = available_; }
+    bool isAvailable() { return available; }
 
-	// Defines if the channel is enabled for use
-	void setEnabled(bool enabled_) { enabled = enabled_; }
-	bool isEnabled() { return enabled; }
+    // Defines if the channel is enabled for use
+    void setEnabled (bool enabled_) { enabled = enabled_; }
+    bool isEnabled() { return enabled; }
 
 private:
-
-	String name;
-	bool available = false;
-	bool enabled = false;
+    String name;
+    bool available = false;
+    bool enabled = false;
 };
 
 class AnalogInput : public InputChannel
 {
-
 public:
-	AnalogInput(String name, NIDAQ::int32 terminalConfig);
-	AnalogInput() : InputChannel() {};
-	~AnalogInput() {};
+    AnalogInput (String name, NIDAQ::int32 terminalConfig);
+    AnalogInput() : InputChannel() {};
+    ~AnalogInput() {};
 
-	SOURCE_TYPE getSourceType() { return sourceTypes[sourceTypeIndex]; }
-	void setNextSourceType() { sourceTypeIndex = (sourceTypeIndex + 1) % sourceTypes.size(); }
+    SOURCE_TYPE getSourceType() { return sourceTypes[sourceTypeIndex]; }
+    void setNextSourceType() { sourceTypeIndex = (sourceTypeIndex + 1) % sourceTypes.size(); }
 
 private:
-	int sourceTypeIndex = 0;
-	Array<SOURCE_TYPE> sourceTypes;
-
+    int sourceTypeIndex = 0;
+    Array<SOURCE_TYPE> sourceTypes;
 };
 
 class NIDAQDevice
 {
-
 public:
+    NIDAQDevice (String name_) : name (name_) {};
+    NIDAQDevice() {};
+    ~NIDAQDevice() {};
 
-	NIDAQDevice(String name_) : name(name_) {};
-	NIDAQDevice() {};
-	~NIDAQDevice() {};
+    String getName() { return name; }
 
-	String getName() { return name; }
+    String productName;
 
-	String productName;
+    NIDAQ::int32 deviceCategory;
+    NIDAQ::uInt32 productNum;
+    NIDAQ::uInt32 serialNum;
+    NIDAQ::uInt32 numAIChannels;
+    NIDAQ::uInt32 numAOChannels;
+    NIDAQ::uInt32 numDIChannels;
+    NIDAQ::uInt32 numDOChannels;
 
-	NIDAQ::int32 deviceCategory;
-	NIDAQ::uInt32 productNum;
-	NIDAQ::uInt32 serialNum;
-	NIDAQ::uInt32 numAIChannels;
-	NIDAQ::uInt32 numAOChannels;
-	NIDAQ::uInt32 numDIChannels;
-	NIDAQ::uInt32 numDOChannels;
+    bool isUSBDevice;
+    bool simAISamplingSupported;
 
-	bool isUSBDevice;
-	bool simAISamplingSupported;
+    int digitalReadSize;
 
-	int digitalReadSize;
+    SettingsRange sampleRateRange;
 
-	SettingsRange sampleRateRange;
+    Array<SettingsRange> voltageRanges;
+    Array<NIDAQ::float64> adcResolutions;
 
-	Array<SettingsRange> voltageRanges;
-	Array<NIDAQ::float64> adcResolutions;
-
-	Array<std::string> digitalPortNames;
-	Array<bool> digitalPortStates;
+    Array<std::string> digitalPortNames;
+    Array<bool> digitalPortStates;
 
 private:
-
-	String name;
-
+    String name;
 };
 
 class NIDAQmxDeviceManager
 {
 public:
+    NIDAQmxDeviceManager() {};
+    ~NIDAQmxDeviceManager() {};
 
-	NIDAQmxDeviceManager() {};
-	~NIDAQmxDeviceManager() {};
+    void scanForDevices();
 
-	void scanForDevices();
+    int getNumAvailableDevices() { return devices.size(); }
 
-	int getNumAvailableDevices() { return devices.size(); }
+    int getDeviceIndexFromName (String deviceName);
+    NIDAQDevice* getDeviceAtIndex (int index) { return devices[index]; }
 
-	int getDeviceIndexFromName(String deviceName);
-	NIDAQDevice* getDeviceAtIndex(int index) { return devices[index]; }
+    NIDAQDevice* getDeviceFromName (String deviceName);
 
-	NIDAQDevice* getDeviceFromName(String deviceName);
-
-	friend class NIDAQThread;
+    friend class NIDAQThread;
 
 private:
-
-	OwnedArray<NIDAQDevice> devices;
-	int activeDeviceIndex;
+    OwnedArray<NIDAQDevice> devices;
+    int activeDeviceIndex;
 };
 
 class NIDAQmx : public Thread
 {
 public:
+    NIDAQmx (NIDAQDevice* device_);
+    ~NIDAQmx() {};
 
-	NIDAQmx(NIDAQDevice* device_);
-	~NIDAQmx() {};
+    /* Pointer to the active device */
+    NIDAQDevice* device;
 
-	/* Pointer to the active device */
-	NIDAQDevice* device;
+    /* Connects to the active device */
+    void connect();
 
-	/* Connects to the active device */
-	void connect(); 
+    /* Unique device properties */
+    String getProductName() { return device->productName; };
+    String getSerialNumber() { return String (device->serialNum); };
 
-	/* Unique device properties */
-	String getProductName() { return device->productName; };
-	String getSerialNumber() { return String(device->serialNum); };
+    /* Analog configuration */
+    NIDAQ::float64 getSampleRate() { return sampleRates[sampleRateIndex]; };
+    void setSampleRate (int index) { sampleRateIndex = index; };
 
-	/* Analog configuration */
-	NIDAQ::float64 getSampleRate() { return sampleRates[sampleRateIndex]; };
-	void setSampleRate(int index) { sampleRateIndex = index; };
+    SettingsRange getVoltageRange() { return device->voltageRanges[voltageRangeIndex]; };
+    void setVoltageRange (int index) { voltageRangeIndex = index; };
 
-	SettingsRange getVoltageRange() { return device->voltageRanges[voltageRangeIndex]; };
-	void setVoltageRange(int index) { voltageRangeIndex = index; };
+    SOURCE_TYPE getSourceTypeForInput (int analogIntputIndex) { return ai[analogIntputIndex]->getSourceType(); };
+    void toggleSourceType (int analogInputIndex) { ai[analogInputIndex]->setNextSourceType(); }
 
-	SOURCE_TYPE getSourceTypeForInput(int analogIntputIndex) { return ai[analogIntputIndex]->getSourceType(); };
-	void toggleSourceType(int analogInputIndex) { ai[analogInputIndex]->setNextSourceType(); }
+    void setNumActiveAnalogInputs (int numActiveAnalogInputs_) { numActiveAnalogInputs = numActiveAnalogInputs_; };
+    int getNumActiveAnalogInputs() { return numActiveAnalogInputs; };
 
-	void setNumActiveAnalogInputs(int numActiveAnalogInputs_) { numActiveAnalogInputs = numActiveAnalogInputs_; };
-	int getNumActiveAnalogInputs() { return numActiveAnalogInputs; };
+    /*Digital configuration */
+    void setDigitalReadSize (int digitalReadSize_) { digitalReadSize = digitalReadSize_; };
+    int getDigitalReadSize() { return digitalReadSize; };
 
-	/*Digital configuration */
-	void setDigitalReadSize(int digitalReadSize_) { digitalReadSize = digitalReadSize_; };
-	int getDigitalReadSize() { return digitalReadSize; };
+    void setNumActiveDigitalInputs (int numActiveDigitalInputs_) { numActiveDigitalInputs = numActiveDigitalInputs_; };
+    int getNumActiveDigitalInputs() { return numActiveDigitalInputs; };
 
-	void setNumActiveDigitalInputs(int numActiveDigitalInputs_) { numActiveDigitalInputs = numActiveDigitalInputs_; };
-	int getNumActiveDigitalInputs() { return numActiveDigitalInputs; };
+    /* 32-bit mask indicating which lines are currently enabled */
+    uint32 getActiveDigitalLines();
 
-	/* 32-bit mask indicating which lines are currently enabled */
-	uint32 getActiveDigitalLines();
+    int getNumPorts() { return device->digitalPortNames.size(); };
+    bool getPortState (int idx) { return device->digitalPortStates[idx]; };
+    void setPortState (int idx, bool state) { device->digitalPortStates.set (idx, state); };
 
-	int getNumPorts() { return device->digitalPortNames.size(); };
-	bool getPortState(int idx) { return device->digitalPortStates[idx]; };
-	void setPortState(int idx, bool state) { device->digitalPortStates.set(idx, state); };
+    void run();
 
-	void run();
+    Array<NIDAQ::float64> sampleRates;
 
-	Array<NIDAQ::float64> sampleRates;
+    OwnedArray<AnalogInput> ai;
+    OwnedArray<InputChannel> di;
 
-	OwnedArray<AnalogInput> 	ai;
-	OwnedArray<InputChannel> 	di;
-
-	friend class NIDAQThread;
+    friend class NIDAQThread;
 
 private:
+    /* Manages connected NIDAQ devices */
+    ScopedPointer<NIDAQmxDeviceManager> dm;
 
-	/* Manages connected NIDAQ devices */
-	ScopedPointer<NIDAQmxDeviceManager> dm;
+    int deviceIndex = 0;
+    int sampleRateIndex = 0;
+    int voltageRangeIndex = 0;
 
-	int deviceIndex = 0;
-	int sampleRateIndex = 0;
-	int voltageRangeIndex = 0;
+    int digitalReadSize = 0;
 
-	int digitalReadSize = 0;
+    int numActiveAnalogInputs = DEFAULT_NUM_ANALOG_INPUTS; // 8
+    int numActiveDigitalInputs = DEFAULT_NUM_DIGITAL_INPUTS; // 8
 
-	int numActiveAnalogInputs = DEFAULT_NUM_ANALOG_INPUTS; //8
-	int numActiveDigitalInputs = DEFAULT_NUM_DIGITAL_INPUTS; //8
+    HeapBlock<NIDAQ::float64> ai_data;
 
-	HeapBlock<NIDAQ::float64> ai_data;
+    HeapBlock<NIDAQ::uInt32> eventCodes;
 
-	HeapBlock<NIDAQ::uInt32> eventCodes;
+    int64 ai_timestamp;
+    uint64 eventCode;
 
-	int64 ai_timestamp;
-	uint64 eventCode;
+    std::map<int, int> digitalLineMap;
 
-	std::map<int,int> digitalLineMap;
-
-	DataBuffer* aiBuffer;
-
+    DataBuffer* aiBuffer;
 };
 
-#endif  // __NIDAQCOMPONENTS_H__
+#endif // __NIDAQCOMPONENTS_H__
