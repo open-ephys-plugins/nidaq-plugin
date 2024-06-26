@@ -73,6 +73,7 @@ void EditorBackground::paint (Graphics& g)
 			aiChanWidth / 3 - 4, 14, 1, 0.4);
 			*/
 
+            g.setColour (findColour (ThemeColours::defaultText));
             g.setFont (10);
             g.drawText (
                 String ("AI") + String (i),
@@ -119,6 +120,7 @@ void EditorBackground::paint (Graphics& g)
                 4,
                 1);
 
+            g.setColour (findColour (ThemeColours::defaultText));
             g.setFont (10);
             if (i >= 10)
                 g.setFont (8);
