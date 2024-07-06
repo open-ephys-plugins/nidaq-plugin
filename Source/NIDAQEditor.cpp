@@ -464,7 +464,8 @@ void NIDAQEditor::draw()
     fifoMonitor->setBounds (xOffset + 2, 105, 70, 12);
     //addAndMakeVisible(fifoMonitor);
 
-    configureDeviceButton = new UtilityButton ("...", FontOptions ("Small Text", 12, Font::plain));
+    configureDeviceButton = new UtilityButton ("...");
+    configureDeviceButton->setFont (FontOptions ((12.0f)));
     configureDeviceButton->setBounds (xOffset + 60, 25, 24, 12);
     configureDeviceButton->addListener (this);
     configureDeviceButton->setAlpha (0.5f);
