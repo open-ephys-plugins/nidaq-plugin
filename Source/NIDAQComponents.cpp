@@ -538,8 +538,6 @@ void NIDAQmx::run()
                 &ai_read,
                 NULL));
 
-        // LOGD("arraySizeInSamps: ", arraySizeInSamps, " Samples read: ", ai_read);
-
         if (getActiveDigitalLines() > 0)
         {
             for (int i = 0; i < CHANNEL_BUFFER_SIZE; i++)
@@ -629,7 +627,6 @@ void NIDAQmx::run()
                     if (! digitalLineMap.count (eventCode))
                     {
                         digitalLineMap[eventCode] = 1;
-                        LOGD ("Found event code: ", eventCode);
                     }
                 }
                 aiBuffer->addToBuffer (aiSamples, &ai_timestamp, &ts, &eventCode, 1);
