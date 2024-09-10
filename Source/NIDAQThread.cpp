@@ -39,7 +39,8 @@ std::unique_ptr<GenericEditor> NIDAQThread::createEditor (SourceNode* sn)
     return ed;
 }
 
-NIDAQThread::NIDAQThread (SourceNode* sn) : DataThread (sn), inputAvailable (false)
+NIDAQThread::NIDAQThread (SourceNode* sn) : DataThread (sn),
+                                            inputAvailable (false)
 {
     dm = new NIDAQmxDeviceManager();
 
@@ -180,7 +181,21 @@ int NIDAQThread::openConnection()
 
     mNIDAQ->aiBuffer = sourceBuffers.getLast();
 
-    sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+    sampleRateIndex = -1;
+
+    for (int i = 0; i < mNIDAQ->sampleRates.size(); i++)
+    {
+        if (mNIDAQ->sampleRates[i] == 30000.0) // default to 30 kHz
+        {
+            sampleRateIndex = i;
+            break;
+        }
+    }
+
+    // otherwise set to highest possible rate
+    if (sampleRateIndex == -1)
+        sampleRateIndex = mNIDAQ->sampleRates.size() - 1;
+
     setSampleRate (sampleRateIndex);
 
     voltageRangeIndex = mNIDAQ->device->voltageRanges.size() - 1;

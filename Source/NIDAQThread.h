@@ -185,7 +185,7 @@ private:
 
     /* Selectable device properties */
     int deviceIndex = 0;
-    int sampleRateIndex = 0;
+    int sampleRateIndex = -1;
     int voltageRangeIndex = 0;
 
     bool isRecording;
