@@ -38,7 +38,7 @@ extern "C" EXPORT void getLibInfo (Plugin::LibraryInfo* info)
 {
     info->apiVersion = PLUGIN_API_VER;
     info->name = "NI-DAQmx";
-    info->libVersion = "0.4.0";
+    info->libVersion = "1.0.0";
     info->numPlugins = NUM_PLUGINS;
 }
 
