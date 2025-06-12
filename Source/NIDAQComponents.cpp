@@ -418,14 +418,19 @@ void NIDAQmx::run()
 		switch (ai[i]->getSourceType()) {
 		case SOURCE_TYPE::RSE:
 			termConfig = DAQmx_Val_RSE;
+			break;
 		case SOURCE_TYPE::NRSE:
 			termConfig = DAQmx_Val_NRSE;
+			break;
 		case SOURCE_TYPE::DIFF:
 			termConfig = DAQmx_Val_Diff;
+			break;
 		case SOURCE_TYPE::PSEUDO_DIFF:
 			termConfig = DAQmx_Val_PseudoDiff;
+			break;
 		default:
 			termConfig = DAQmx_Val_Cfg_Default;
+			break;
 		}
 
 		SettingsRange voltageRange = device->voltageRanges[voltageRangeIndex];
